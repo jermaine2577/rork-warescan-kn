@@ -154,6 +154,9 @@ export default function ProductDetailScreen() {
       storageLocation: storageLocation.trim(),
       destination,
       notes: notes.trim() || undefined,
+      customerName: customerName.trim() || undefined,
+      price: price.trim() || undefined,
+      comment: comment.trim() || undefined,
     });
 
     Alert.alert('Success', 'Package updated successfully', [
@@ -404,36 +407,73 @@ export default function ProductDetailScreen() {
           )}
         </View>
 
-        {customerName && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Customer Name</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Customer Name</Text>
+          {canEditProductDetails ? (
+            <TextInput
+              style={styles.input}
+              value={customerName}
+              onChangeText={setCustomerName}
+              placeholder="Enter customer name"
+              placeholderTextColor="#9CA3AF"
+            />
+          ) : (
             <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyText}>{customerName}</Text>
+              <Text style={styles.readOnlyText}>{customerName || 'Not specified'}</Text>
             </View>
-          </View>
-        )}
+          )}
+          {!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
+            <Text style={styles.hint}>Special permission required to edit.</Text>
+          )}
+        </View>
 
-        {price && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Price</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Price</Text>
+          {canEditProductDetails ? (
+            <TextInput
+              style={styles.input}
+              value={price}
+              onChangeText={setPrice}
+              placeholder="Enter price"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="decimal-pad"
+            />
+          ) : (
             <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyText}>${price}</Text>
+              <Text style={styles.readOnlyText}>{price ? `${price}` : 'Not specified'}</Text>
             </View>
-          </View>
-        )}
+          )}
+          {!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
+            <Text style={styles.hint}>Special permission required to edit.</Text>
+          )}
+        </View>
 
-        {comment && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Comments</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Comments</Text>
+          {canEditProductDetails ? (
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={comment}
+              onChangeText={setComment}
+              placeholder="Additional comments..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          ) : (
             <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyText}>{comment}</Text>
+              <Text style={styles.readOnlyText}>{comment || 'No comments'}</Text>
             </View>
-          </View>
-        )}
+          )}
+          {!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
+            <Text style={styles.hint}>Special permission required to edit.</Text>
+          )}
+        </View>
 
-        {!product.uploadStatus && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Notes</Text>
+        <View style={styles.section}>
+          <Text style={styles.label}>Notes</Text>
+          {canEditProductDetails || !product.uploadStatus ? (
             <TextInput
               style={[styles.input, styles.textArea]}
               value={notes}
@@ -444,8 +484,15 @@ export default function ProductDetailScreen() {
               numberOfLines={4}
               textAlignVertical="top"
             />
-          </View>
-        )}
+          ) : (
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyText}>{notes || 'No notes'}</Text>
+            </View>
+          )}
+          {!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
+            <Text style={styles.hint}>Special permission required to edit.</Text>
+          )}
+        </View>
 
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Trash2 size={20} color="#EF4444" />
