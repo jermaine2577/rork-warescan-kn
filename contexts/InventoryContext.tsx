@@ -5,8 +5,10 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { Product, ProductInput, ProductStatus, Destination } from '@/types/inventory';
 import { getDb, initializeFirebase } from '@/config/firebase';
 import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import type { User } from '@/contexts/AuthContext';
 
 const CURRENT_USER_KEY = '@current_user_id';
+const USERS_STORAGE_KEY = '@inventory_users';
 
 function getUserStorageKey(userId: string): string {
   return `@inventory_products_${userId}`;
@@ -21,6 +23,32 @@ async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
+async function getCurrentUser(): Promise<User | null> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return null;
+    
+    const stored = await AsyncStorage.getItem(USERS_STORAGE_KEY);
+    if (!stored) return null;
+    
+    const users: User[] = JSON.parse(stored);
+    return users.find(u => u.id === userId) || null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
+}
+
+function getEffectiveOwnerIdForUser(user: User | null): string {
+  if (!user) return 'unknown';
+  
+  if (user.role === 'sub-user' && user.managerId) {
+    return user.managerId;
+  }
+  
+  return user.id;
+}
+
 async function loadProducts(userId: string | null): Promise<Product[]> {
   if (!userId) {
     console.log('No user ID, returning empty products');
@@ -28,7 +56,12 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
   }
 
   try {
-    const storageKey = getUserStorageKey(userId);
+    const currentUser = await getCurrentUser();
+    const effectiveOwnerId = getEffectiveOwnerIdForUser(currentUser);
+    
+    console.log(`Loading products for user ${userId}, effective owner: ${effectiveOwnerId}`);
+    
+    const storageKey = getUserStorageKey(effectiveOwnerId);
     let stored = await AsyncStorage.getItem(storageKey);
     
     if (!stored || stored.trim() === '') {
@@ -73,8 +106,8 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
         return [];
       }
       
-      const userProducts = parsed.filter((p: Product) => p.ownerId === userId);
-      console.log(`✓ Loaded ${userProducts.length} products from storage for user ${userId}`);
+      const userProducts = parsed.filter((p: Product) => p.ownerId === effectiveOwnerId);
+      console.log(`✓ Loaded ${userProducts.length} products from storage for effective owner ${effectiveOwnerId}`);
       return userProducts;
     } catch (parseError) {
       console.error('❌ JSON Parse error in products:', parseError);
@@ -89,7 +122,9 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
   } catch (error) {
     console.error('❌ Critical error loading products:', error);
     try {
-      const storageKey = getUserStorageKey(userId);
+      const currentUser = await getCurrentUser();
+      const effectiveOwnerId = getEffectiveOwnerIdForUser(currentUser);
+      const storageKey = getUserStorageKey(effectiveOwnerId);
       await AsyncStorage.removeItem(storageKey);
       await AsyncStorage.setItem(storageKey, JSON.stringify([]));
     } catch (clearError) {
@@ -104,6 +139,9 @@ async function saveProducts(products: Product[], userId: string | null): Promise
     console.error('Cannot save products without user ID');
     throw new Error('Cannot save products without user ID. Please ensure you are logged in.');
   }
+  
+  const currentUser = await getCurrentUser();
+  const effectiveOwnerId = getEffectiveOwnerIdForUser(currentUser);
 
   try {
     if (!Array.isArray(products)) {
@@ -149,9 +187,9 @@ async function saveProducts(products: Product[], userId: string | null): Promise
       throw new Error('Invalid serialization result');
     }
     
-    const storageKey = getUserStorageKey(userId);
+    const storageKey = getUserStorageKey(effectiveOwnerId);
     await AsyncStorage.setItem(storageKey, serialized);
-    console.log(`✓ Saved ${cleanedProducts.length} products to storage for user ${userId}`);
+    console.log(`✓ Saved ${cleanedProducts.length} products to storage for effective owner ${effectiveOwnerId}`);
     
     return cleanedProducts;
   } catch (error) {
@@ -228,12 +266,18 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const [statusFilter, setStatusFilter] = useState<ProductStatus | 'all'>('all');
   const [destinationFilter, setDestinationFilter] = useState<Destination | 'all'>('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [effectiveOwnerId, setEffectiveOwnerId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUserId = async () => {
       const userId = await getCurrentUserId();
       console.log('Current user ID loaded:', userId);
       setCurrentUserId(userId);
+      
+      const currentUser = await getCurrentUser();
+      const effectiveId = getEffectiveOwnerIdForUser(currentUser);
+      console.log('Effective owner ID:', effectiveId);
+      setEffectiveOwnerId(effectiveId);
     };
     loadUserId();
     
@@ -268,8 +312,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const { mutate: saveProductsMutate } = saveMutation;
 
   const getEffectiveOwnerId = useCallback((): string => {
-    return currentUserId || 'unknown';
-  }, [currentUserId]);
+    return effectiveOwnerId || currentUserId || 'unknown';
+  }, [effectiveOwnerId, currentUserId]);
 
   const addProduct = useCallback((input: ProductInput, username?: string) => {
     const ownerId = getEffectiveOwnerId();
