@@ -82,6 +82,9 @@ export default function NevisScannerScreen() {
       
       const trimmedBarcode = data.trim();
       
+      console.log('Setting scanned to true to prevent duplicate scans');
+      setScanned(true);
+      
       if (trimmedBarcode.startsWith('http://') || trimmedBarcode.startsWith('https://') || trimmedBarcode.includes('rork.app') || trimmedBarcode.includes('exp.direct')) {
         console.log('Ignoring URL/QR code:', trimmedBarcode);
         
@@ -180,7 +183,7 @@ export default function NevisScannerScreen() {
         }
         
         const resetScannerState = () => {
-          console.log('Resetting scanner state after error');
+          console.log('Resetting scanner state after destination error');
           setScanned(false);
           isNavigatingRef.current = false;
           setLastScannedBarcode('');
@@ -189,27 +192,29 @@ export default function NevisScannerScreen() {
             setTimeout(() => {
               hardwareScannerRef.current?.focus();
               console.log('Hardware scanner refocused');
-            }, 100);
+            }, 150);
           }
         };
         
-        setTimeout(() => {
-          Alert.alert(
-            'Try a Different Barcode',
-            `This product belongs to ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`,
-            [
-              {
-                text: 'Scan Another',
-                style: 'default',
-                onPress: resetScannerState
+        Alert.alert(
+          'Try a Different Barcode',
+          `This product belongs to ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`,
+          [
+            {
+              text: 'Scan Another',
+              style: 'default',
+              onPress: () => {
+                resetScannerState();
               }
-            ],
-            { 
-              cancelable: true,
-              onDismiss: resetScannerState
             }
-          );
-        }, 50);
+          ],
+          { 
+            cancelable: true,
+            onDismiss: () => {
+              resetScannerState();
+            }
+          }
+        );
         
         return;
       }
@@ -271,7 +276,6 @@ export default function NevisScannerScreen() {
       }
       
       console.log('Product is valid for receiving. Processing...');
-      setScanned(true);
       isNavigatingRef.current = true;
       await playSuccessFeedback();
 
@@ -323,32 +327,36 @@ export default function NevisScannerScreen() {
           setTimeout(() => {
             hardwareScannerRef.current?.focus();
             console.log('Hardware scanner refocused');
-          }, 100);
+          }, 150);
         }
       };
       
-      setTimeout(() => {
-        Alert.alert(
-          'Error',
-          'An error occurred while processing the barcode. Please try again.',
-          [
-            {
-              text: 'OK',
-              onPress: resetScannerState
-            }
-          ],
+      Alert.alert(
+        'Error',
+        'An error occurred while processing the barcode. Please try again.',
+        [
           {
-            cancelable: true,
-            onDismiss: resetScannerState
+            text: 'OK',
+            onPress: () => {
+              resetScannerState();
+            }
           }
-        );
-      }, 50);
+        ],
+        {
+          cancelable: true,
+          onDismiss: () => {
+            resetScannerState();
+          }
+        }
+      );
     }
   }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode]);
 
   const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
-    processBarcode(data, 'camera');
-  }, [processBarcode]);
+    if (!scanned && !isNavigatingRef.current) {
+      processBarcode(data, 'camera');
+    }
+  }, [processBarcode, scanned]);
 
   const handleHardwareScannerSubmit = useCallback(() => {
     const trimmedValue = hardwareScannerInput.trim();
