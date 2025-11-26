@@ -101,6 +101,9 @@ export default function NevisScannerScreen() {
       return;
     }
     
+    setScanned(true);
+    isNavigatingRef.current = true;
+    
     const trimmedBarcode = data.trim();
     const product = products.find(p => p.barcode === trimmedBarcode);
     
@@ -114,6 +117,10 @@ export default function NevisScannerScreen() {
             onPress: () => {
               setScanned(false);
               isNavigatingRef.current = false;
+              if (scanMode === 'scanner') {
+                setHardwareScannerInput('');
+                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+              }
             }
           }
         ]
@@ -124,15 +131,15 @@ export default function NevisScannerScreen() {
     if (product.status !== 'transferred' || product.destination !== 'Nevis') {
       let errorMessage = '';
       if (product.destination !== 'Nevis') {
-        errorMessage = `This product is for ${product.destination}, not Nevis.`;
+        errorMessage = `This product is for ${product.destination}, not Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'received') {
-        errorMessage = `This product has already been received in Nevis.`;
+        errorMessage = `This product has already been received in Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'released') {
-        errorMessage = `This product has already been released.`;
+        errorMessage = `This product has already been released.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'awaiting_from_nevis') {
-        errorMessage = `This product is awaiting return from Nevis.`;
+        errorMessage = `This product is awaiting return from Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else {
-        errorMessage = `This product is not ready to be received.\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
+        errorMessage = `This product is not ready to be received.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
       }
       
       Alert.alert(
@@ -141,19 +148,21 @@ export default function NevisScannerScreen() {
         [
           {
             text: 'OK',
+            style: 'cancel',
             onPress: () => {
               setScanned(false);
               isNavigatingRef.current = false;
+              if (scanMode === 'scanner') {
+                setHardwareScannerInput('');
+                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+              }
             }
           }
-        ]
+        ],
+        { cancelable: false }
       );
       return;
     }
-    
-    isNavigatingRef.current = true;
-    setScanned(true);
-
     await playSuccessFeedback();
 
     updateProduct(product.id, {
@@ -174,6 +183,10 @@ export default function NevisScannerScreen() {
             setScanned(false);
             isNavigatingRef.current = false;
             setLastScannedBarcode(trimmedBarcode);
+            if (scanMode === 'scanner') {
+              setHardwareScannerInput('');
+              setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+            }
           },
         },
         {
@@ -185,7 +198,7 @@ export default function NevisScannerScreen() {
         },
       ]
     );
-  }, [scanned, products, updateProduct, playSuccessFeedback, router]);
+  }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode, hardwareScannerRef]);
 
   const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
     processBarcode(data, 'camera');
