@@ -129,30 +129,40 @@ export default function NevisScannerScreen() {
     }
     
     if (product.status !== 'transferred' || product.destination !== 'Nevis') {
+      let errorTitle = 'Try a Different Barcode';
       let errorMessage = '';
+      
       if (product.destination !== 'Nevis') {
-        errorMessage = `This product is for ${product.destination}, not Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
+        errorMessage = `This product is for ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'received') {
-        errorMessage = `This product has already been received in Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
+        errorMessage = `This product has already been received in Nevis.\n\nPlease scan a different package.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'released') {
-        errorMessage = `This product has already been released.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
+        errorMessage = `This product has already been released.\n\nPlease scan a different package.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else if (product.status === 'awaiting_from_nevis') {
-        errorMessage = `This product is awaiting return from Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
+        errorMessage = `This product is awaiting return from Nevis.\n\nPlease scan a different package.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`;
       } else {
-        errorMessage = `This product is not ready to be received.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
+        errorMessage = `This product is not ready to be received.\n\nPlease scan a different package.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
       }
+      
+      console.log('Invalid product for Nevis receiving:', trimmedBarcode, 'Status:', product.status, 'Destination:', product.destination);
       
       setScanned(false);
       isNavigatingRef.current = false;
       
+      if (scanMode === 'scanner') {
+        setHardwareScannerInput('');
+      }
+      
       Alert.alert(
-        'Cannot Receive Product',
+        errorTitle,
         errorMessage,
         [
           {
-            text: 'OK',
-            style: 'cancel',
+            text: 'Scan Another',
+            style: 'default',
             onPress: () => {
+              setScanned(false);
+              isNavigatingRef.current = false;
               if (scanMode === 'scanner') {
                 setHardwareScannerInput('');
                 setTimeout(() => hardwareScannerRef.current?.focus(), 100);
@@ -160,15 +170,18 @@ export default function NevisScannerScreen() {
             }
           }
         ],
-        { cancelable: true }
+        { 
+          cancelable: true,
+          onDismiss: () => {
+            setScanned(false);
+            isNavigatingRef.current = false;
+            if (scanMode === 'scanner') {
+              setHardwareScannerInput('');
+              setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+            }
+          }
+        }
       );
-      
-      if (scanMode === 'scanner') {
-        setTimeout(() => {
-          setHardwareScannerInput('');
-          hardwareScannerRef.current?.focus();
-        }, 100);
-      }
       
       return;
     }
