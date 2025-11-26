@@ -203,8 +203,12 @@ export default function NevisScannerScreen() {
           if (scanMode === 'scanner') {
             setHardwareScannerInput('');
             setTimeout(() => {
-              hardwareScannerRef.current?.focus();
-              console.log('Hardware scanner refocused');
+              try {
+                hardwareScannerRef.current?.focus();
+                console.log('Hardware scanner refocused');
+              } catch {
+                console.log('Could not refocus (non-critical)');
+              }
             }, 150);
           }
         };
@@ -212,16 +216,26 @@ export default function NevisScannerScreen() {
         resetScannerState();
         
         setTimeout(() => {
-          Alert.alert(
-            'Wrong Destination',
-            `This package belongs to ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.`,
-            [
+          try {
+            Alert.alert(
+              'Wrong Destination',
+              `This package belongs to ${product.destination}, not Nevis.\n\nPlease scan a different package.`,
+              [
+                {
+                  text: 'OK',
+                  style: 'default',
+                  onPress: () => {
+                    console.log('User acknowledged destination error');
+                  }
+                }
+              ],
               {
-                text: 'OK',
-                style: 'default',
+                cancelable: true
               }
-            ]
-          );
+            );
+          } catch (alertError) {
+            console.error('Could not show alert (non-critical):', alertError);
+          }
         }, 100);
         
         return;
@@ -360,7 +374,7 @@ export default function NevisScannerScreen() {
               try {
                 hardwareScannerRef.current?.focus();
                 console.log('Hardware scanner refocused');
-              } catch (focusError) {
+              } catch {
                 console.log('Could not refocus scanner (non-critical)');
               }
             }, 150);

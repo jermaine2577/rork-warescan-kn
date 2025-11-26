@@ -212,7 +212,43 @@ export default function NevisReleasingScreen() {
       return;
     }
 
-    if (product.status !== 'received' || product.destination !== 'Nevis' || !product.dateTransferred) {
+    if (product.destination !== 'Nevis') {
+      setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
+      setTimeout(() => {
+        try {
+          Alert.alert(
+            'Wrong Portal',
+            'This package is not designated for Nevis. Please use the St. Kitts Releasing portal.',
+            [
+              {
+                text: 'OK',
+                onPress: resetState
+              }
+            ],
+            { 
+              cancelable: true,
+              onDismiss: resetState
+            }
+          );
+        } catch (alertError) {
+          console.error('Could not show alert (non-critical):', alertError);
+          resetState();
+        }
+      }, 400);
+      return;
+    }
+
+    if (product.status !== 'received') {
       setShowScanner(false);
       
       const resetState = () => {
@@ -225,28 +261,36 @@ export default function NevisReleasingScreen() {
       };
       
       let errorMessage = 'This package has not been accepted in Nevis yet. Only accepted packages can be released.';
+      let errorTitle = 'Not Accepted';
       
-      if (product.destination !== 'Nevis') {
-        errorMessage = 'This package is not designated for Nevis. It cannot be released from this portal.';
-      } else if (!product.dateTransferred) {
+      if (product.status === 'transferred') {
+        errorTitle = 'Not Yet Accepted';
+        errorMessage = 'This package has been transferred to Nevis but not yet accepted. Please go to Nevis Receiving portal to accept it first.';
+      } else if (!product.dateTransferred || product.status === 'awaiting_from_nevis') {
+        errorTitle = 'Not in Nevis';
         errorMessage = 'This package must go through the Nevis Receiving portal first before it can be released.';
       }
       
       setTimeout(() => {
-        Alert.alert(
-          'Invalid Package',
-          errorMessage,
-          [
-            {
-              text: 'OK',
-              onPress: resetState
+        try {
+          Alert.alert(
+            errorTitle,
+            errorMessage,
+            [
+              {
+                text: 'OK',
+                onPress: resetState
+              }
+            ],
+            { 
+              cancelable: true,
+              onDismiss: resetState
             }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: resetState
-          }
-        );
+          );
+        } catch (alertError) {
+          console.error('Could not show alert (non-critical):', alertError);
+          resetState();
+        }
       }, 400);
       return;
     }
