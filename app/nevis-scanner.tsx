@@ -223,6 +223,18 @@ export default function NevisScannerScreen() {
           );
         }
         
+        let errorMessage = '';
+        
+        if (product.status === 'received') {
+          errorMessage = 'This package has already been accepted in Nevis. Please scan a different package.';
+        } else if (product.status === 'released') {
+          errorMessage = 'This package has already been released. Please scan a different package.';
+        } else if (product.status === 'awaiting_from_nevis') {
+          errorMessage = 'This package is awaiting return from Nevis. Please scan a different package.';
+        } else {
+          errorMessage = 'This package is not ready to be received. Please scan a different package.';
+        }
+        
         const resetScannerState = () => {
           console.log('Resetting scanner state after status error');
           setScanned(false);
@@ -237,20 +249,6 @@ export default function NevisScannerScreen() {
           }
         };
         
-        resetScannerState();
-        
-        let errorMessage = '';
-        
-        if (product.status === 'received') {
-          errorMessage = 'This package has already been accepted in Nevis. Please scan a different package.';
-        } else if (product.status === 'released') {
-          errorMessage = 'This package has already been released. Please scan a different package.';
-        } else if (product.status === 'awaiting_from_nevis') {
-          errorMessage = 'This package is awaiting return from Nevis. Please scan a different package.';
-        } else {
-          errorMessage = 'This package is not ready to be received. Please scan a different package.';
-        }
-        
         setTimeout(() => {
           Alert.alert(
             'Already Processed',
@@ -258,9 +256,14 @@ export default function NevisScannerScreen() {
             [
               {
                 text: 'OK',
+                onPress: resetScannerState,
                 style: 'default',
               }
-            ]
+            ],
+            {
+              cancelable: true,
+              onDismiss: resetScannerState
+            }
           );
         }, 100);
         

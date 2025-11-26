@@ -92,7 +92,19 @@ export default function NevisReleasingScreen() {
     
     if (trimmedData.startsWith('http://') || trimmedData.startsWith('https://') || trimmedData.includes('rork.app') || trimmedData.includes('exp.direct')) {
       console.log('Ignoring URL/QR code:', trimmedData);
+      setScanned(true);
+      setIsProcessing(true);
       setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
       setTimeout(() => {
         Alert.alert(
           'Invalid Barcode',
@@ -100,17 +112,13 @@ export default function NevisReleasingScreen() {
           [
             {
               text: 'OK',
-              onPress: () => {
-                setScanned(false);
-                setIsProcessing(false);
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
-              }
+              onPress: resetState
             }
           ],
-          { cancelable: false }
+          { 
+            cancelable: true,
+            onDismiss: resetState
+          }
         );
       }, 400);
       return;
@@ -123,6 +131,16 @@ export default function NevisReleasingScreen() {
     
     if (!product) {
       setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
       setTimeout(() => {
         Alert.alert(
           'Not Found',
@@ -130,13 +148,13 @@ export default function NevisReleasingScreen() {
           [
             {
               text: 'OK',
-              onPress: () => {
-                setScanned(false);
-                setIsProcessing(false);
-              }
+              onPress: resetState
             }
           ],
-          { cancelable: false }
+          { 
+            cancelable: true,
+            onDismiss: resetState
+          }
         );
       }, 400);
       return;
@@ -144,20 +162,30 @@ export default function NevisReleasingScreen() {
 
     if (product.status === 'released') {
       setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
       setTimeout(() => {
         Alert.alert(
           'Already Released',
-          'This package has already been released.',
+          'This package has already been released. Please scan a different package.',
           [
             {
               text: 'OK',
-              onPress: () => {
-                setScanned(false);
-                setIsProcessing(false);
-              }
+              onPress: resetState
             }
           ],
-          { cancelable: false }
+          { 
+            cancelable: true,
+            onDismiss: resetState
+          }
         );
       }, 400);
       return;
@@ -165,6 +193,16 @@ export default function NevisReleasingScreen() {
 
     if (product.status !== 'received' || product.destination !== 'Nevis') {
       setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
       setTimeout(() => {
         Alert.alert(
           'Invalid Package',
@@ -172,13 +210,13 @@ export default function NevisReleasingScreen() {
           [
             {
               text: 'OK',
-              onPress: () => {
-                setScanned(false);
-                setIsProcessing(false);
-              }
+              onPress: resetState
             }
           ],
-          { cancelable: false }
+          { 
+            cancelable: true,
+            onDismiss: resetState
+          }
         );
       }, 400);
       return;
