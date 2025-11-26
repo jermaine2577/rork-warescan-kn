@@ -45,7 +45,7 @@ export default function NevisReleasingScreen() {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const acceptedProducts = useMemo(
-    () => products.filter((p) => p.status === 'received' && p.destination === 'Nevis'),
+    () => products.filter((p) => p.status === 'received' && p.destination === 'Nevis' && p.dateTransferred),
     [products]
   );
   
@@ -212,7 +212,7 @@ export default function NevisReleasingScreen() {
       return;
     }
 
-    if (product.status !== 'received' || product.destination !== 'Nevis') {
+    if (product.status !== 'received' || product.destination !== 'Nevis' || !product.dateTransferred) {
       setShowScanner(false);
       
       const resetState = () => {
@@ -224,10 +224,18 @@ export default function NevisReleasingScreen() {
         }
       };
       
+      let errorMessage = 'This package has not been accepted in Nevis yet. Only accepted packages can be released.';
+      
+      if (product.destination !== 'Nevis') {
+        errorMessage = 'This package is not designated for Nevis. It cannot be released from this portal.';
+      } else if (!product.dateTransferred) {
+        errorMessage = 'This package must go through the Nevis Receiving portal first before it can be released.';
+      }
+      
       setTimeout(() => {
         Alert.alert(
           'Invalid Package',
-          'This package has not been accepted in Nevis yet. Only accepted packages can be released.',
+          errorMessage,
           [
             {
               text: 'OK',
