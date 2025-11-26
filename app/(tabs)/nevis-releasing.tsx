@@ -44,8 +44,8 @@ export default function NevisReleasingScreen() {
   const hardwareScannerRef = useRef<TextInput>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const transferredProducts = useMemo(
-    () => products.filter((p) => p.status === 'transferred' && p.destination === 'Nevis'),
+  const acceptedProducts = useMemo(
+    () => products.filter((p) => p.status === 'received' && p.destination === 'Nevis'),
     [products]
   );
   
@@ -163,12 +163,12 @@ export default function NevisReleasingScreen() {
       return;
     }
 
-    if (product.status !== 'transferred' || product.destination !== 'Nevis') {
+    if (product.status !== 'received' || product.destination !== 'Nevis') {
       setShowScanner(false);
       setTimeout(() => {
         Alert.alert(
           'Invalid Package',
-          'This package has not been transferred to Nevis yet.',
+          'This package has not been accepted in Nevis yet. Only accepted packages can be released.',
           [
             {
               text: 'OK',
@@ -367,9 +367,9 @@ export default function NevisReleasingScreen() {
           <View style={styles.statsRow}>
             <View style={[styles.statBox, { backgroundColor: '#EDE9FE' }]}>
               <Text style={[styles.statNumber, { color: '#6366F1' }]}>
-                {transferredProducts.length}
+                {acceptedProducts.length}
               </Text>
-              <Text style={styles.statLabel}>In Nevis Warehouse</Text>
+              <Text style={styles.statLabel}>Accepted & Ready</Text>
             </View>
             <View style={[styles.statBox, { backgroundColor: '#F3F4F6' }]}>
               <Text style={[styles.statNumber, { color: '#6B7280' }]}>
@@ -386,7 +386,7 @@ export default function NevisReleasingScreen() {
             <Text style={styles.infoTitle}>Nevis Release Portal</Text>
             <Text style={styles.infoText}>
               This portal is for releasing packages from the Nevis warehouse. 
-              Only packages that have been transferred to Nevis can be released here.
+              Only packages that have been accepted can be released here.
             </Text>
           </View>
         </View>
