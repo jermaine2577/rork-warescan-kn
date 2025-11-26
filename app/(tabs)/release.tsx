@@ -338,12 +338,28 @@ export default function ReleaseScreen() {
             title: 'Release Portal',
             headerShown: true,
             headerLargeTitle: true,
+            headerLeft: () => (
+              <TouchableOpacity
+                style={styles.headerLeft}
+                onPress={() => router.replace('/portal-selection')}
+              >
+                <Home size={20} color="#10B981" />
+                <Text style={styles.headerBackText}>Home</Text>
+              </TouchableOpacity>
+            ),
           }}
         />
         <View style={styles.noAccessContainer}>
           <AlertCircle size={64} color="#EF4444" />
           <Text style={styles.noAccessTitle}>Access Denied</Text>
-          <Text style={styles.noAccessText}>You do not have permission to access the Release Portal. Please contact your administrator.</Text>
+          <Text style={styles.noAccessText}>You do not have permission to access the Releasing Portal. Please contact your administrator.</Text>
+          <TouchableOpacity
+            style={styles.noAccessButton}
+            onPress={() => router.replace('/portal-selection')}
+          >
+            <Home size={20} color="#FFFFFF" />
+            <Text style={styles.noAccessButtonText}>Go to Portal Selection</Text>
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -1599,5 +1615,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 32,
     marginTop: 8,
+  },
+  noAccessButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#10B981',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 24,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  noAccessButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
 });
