@@ -22,11 +22,8 @@ export default function NevisScannerScreen() {
   const { hasPrivilege } = useAuth();
   const { updateProduct, products } = useInventory();
 
-  const hasCheckedPermission = useRef(false);
-
   useEffect(() => {
-    if (!hasCheckedPermission.current && !hasPrivilege('nevisReceiving')) {
-      hasCheckedPermission.current = true;
+    if (!hasPrivilege('nevisReceiving')) {
       Alert.alert(
         'Access Denied',
         'You do not have permission to access the scanner.',
@@ -44,8 +41,9 @@ export default function NevisScannerScreen() {
         ],
         { cancelable: false }
       );
+      return;
     }
-  }, []);
+  }, [hasPrivilege, router]);
   
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -104,9 +102,6 @@ export default function NevisScannerScreen() {
       return;
     }
     
-    setScanned(true);
-    isNavigatingRef.current = true;
-    
     const trimmedBarcode = data.trim();
     const product = products.find(p => p.barcode === trimmedBarcode);
     
@@ -118,8 +113,6 @@ export default function NevisScannerScreen() {
           {
             text: 'OK',
             onPress: () => {
-              setScanned(false);
-              isNavigatingRef.current = false;
               if (scanMode === 'scanner') {
                 setHardwareScannerInput('');
                 setTimeout(() => hardwareScannerRef.current?.focus(), 100);
@@ -158,8 +151,6 @@ export default function NevisScannerScreen() {
             style: 'default',
             onPress: () => {
               console.log('User dismissed error, resetting scanner state');
-              setScanned(false);
-              isNavigatingRef.current = false;
               if (scanMode === 'scanner') {
                 setHardwareScannerInput('');
                 setTimeout(() => hardwareScannerRef.current?.focus(), 100);
@@ -171,8 +162,6 @@ export default function NevisScannerScreen() {
           cancelable: true,
           onDismiss: () => {
             console.log('Alert dismissed, resetting scanner state');
-            setScanned(false);
-            isNavigatingRef.current = false;
             if (scanMode === 'scanner') {
               setHardwareScannerInput('');
               setTimeout(() => hardwareScannerRef.current?.focus(), 100);
@@ -183,6 +172,9 @@ export default function NevisScannerScreen() {
       
       return;
     }
+    
+    setScanned(true);
+    isNavigatingRef.current = true;
     await playSuccessFeedback();
 
     updateProduct(product.id, {
@@ -192,33 +184,35 @@ export default function NevisScannerScreen() {
       destination: product.destination,
     });
 
-    Alert.alert(
-      '✓ Successfully Received',
-      `Package ${trimmedBarcode} has been received in Nevis!\n\nCustomer: ${product.customerName || 'N/A'}\nStorage: ${product.storageLocation || 'N/A'}`,
-      [
-        {
-          text: 'Scan Another',
-          style: 'default',
-          onPress: () => {
-            setScanned(false);
-            isNavigatingRef.current = false;
-            setLastScannedBarcode(trimmedBarcode);
-            if (scanMode === 'scanner') {
-              setHardwareScannerInput('');
-              setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-            }
+    setTimeout(() => {
+      Alert.alert(
+        '✓ Successfully Received',
+        `Package ${trimmedBarcode} has been received in Nevis!\n\nCustomer: ${product.customerName || 'N/A'}\nStorage: ${product.storageLocation || 'N/A'}`,
+        [
+          {
+            text: 'Scan Another',
+            style: 'default',
+            onPress: () => {
+              setScanned(false);
+              isNavigatingRef.current = false;
+              setLastScannedBarcode(trimmedBarcode);
+              if (scanMode === 'scanner') {
+                setHardwareScannerInput('');
+                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+              }
+            },
           },
-        },
-        {
-          text: 'Done',
-          style: 'cancel',
-          onPress: () => {
-            router.back();
+          {
+            text: 'Done',
+            style: 'cancel',
+            onPress: () => {
+              router.back();
+            },
           },
-        },
-      ]
-    );
-  }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode, hardwareScannerRef]);
+        ]
+      );
+    }, 100);
+  }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode]);
 
   const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
     processBarcode(data, 'camera');
