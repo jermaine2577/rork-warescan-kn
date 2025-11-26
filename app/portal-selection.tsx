@@ -131,6 +131,14 @@ export default function PortalSelectionScreen() {
               You don&apos;t have access to any portals yet.{' \n'}
               Please contact your administrator to request access.
             </Text>
+            <TouchableOpacity
+              style={styles.noAccessLogoutButton}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <LogOut size={20} color="#FFFFFF" />
+              <Text style={styles.noAccessLogoutText}>Logout</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <>
@@ -342,5 +350,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#374151',
+  },
+  noAccessLogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#2563EB',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    marginTop: 16,
+    ...Platform.select({
+      web: {
+        transition: 'all 0.2s ease',
+        cursor: 'pointer',
+      } as any,
+    }),
+  },
+  noAccessLogoutText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
 });
