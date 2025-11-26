@@ -84,23 +84,38 @@ export default function NevisScannerScreen() {
       
       if (trimmedBarcode.startsWith('http://') || trimmedBarcode.startsWith('https://') || trimmedBarcode.includes('rork.app') || trimmedBarcode.includes('exp.direct')) {
         console.log('Ignoring URL/QR code:', trimmedBarcode);
-        setScanned(false);
-        isNavigatingRef.current = false;
-        Alert.alert(
-          'Invalid Barcode',
-          'Please scan a product barcode, not a QR code or URL.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
+        
+        const resetScannerState = () => {
+          console.log('Resetting scanner state after invalid barcode');
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode('');
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => {
+              hardwareScannerRef.current?.focus();
+              console.log('Hardware scanner refocused');
+            }, 100);
+          }
+        };
+        
+        setTimeout(() => {
+          Alert.alert(
+            'Invalid Barcode',
+            'Please scan a product barcode, not a QR code or URL.',
+            [
+              {
+                text: 'OK',
+                onPress: resetScannerState
               }
+            ],
+            {
+              cancelable: true,
+              onDismiss: resetScannerState
             }
-          ]
-        );
+          );
+        }, 50);
+        
         return;
       }
       
@@ -108,23 +123,44 @@ export default function NevisScannerScreen() {
       
       if (!product) {
         console.log('Product not found in inventory:', trimmedBarcode);
-        setScanned(false);
-        isNavigatingRef.current = false;
-        Alert.alert(
-          'Product Not Found',
-          `No product found with barcode: ${trimmedBarcode}`,
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
+        
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
+            console.log('Haptic error:', e)
+          );
+        }
+        
+        const resetScannerState = () => {
+          console.log('Resetting scanner state after not found error');
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode('');
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => {
+              hardwareScannerRef.current?.focus();
+              console.log('Hardware scanner refocused');
+            }, 100);
+          }
+        };
+        
+        setTimeout(() => {
+          Alert.alert(
+            'Product Not Found',
+            `No product found with barcode: ${trimmedBarcode}`,
+            [
+              {
+                text: 'OK',
+                onPress: resetScannerState
               }
+            ],
+            {
+              cancelable: true,
+              onDismiss: resetScannerState
             }
-          ]
-        );
+          );
+        }, 50);
+        
         return;
       }
       
@@ -136,43 +172,70 @@ export default function NevisScannerScreen() {
       
       if (product.destination !== 'Nevis') {
         console.log('Product destination mismatch - belongs to', product.destination, 'not Nevis');
-        setScanned(false);
-        isNavigatingRef.current = false;
         
-        Alert.alert(
-          'Try a Different Barcode',
-          `This product belongs to ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`,
-          [
-            {
-              text: 'Scan Another',
-              style: 'default',
-              onPress: () => {
-                console.log('User dismissed error, ready for next scan');
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
-              }
-            }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: () => {
-              console.log('Alert dismissed via cancelable');
-              if (scanMode === 'scanner') {
-                setHardwareScannerInput('');
-                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-              }
-            }
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
+            console.log('Haptic error:', e)
+          );
+        }
+        
+        const resetScannerState = () => {
+          console.log('Resetting scanner state after error');
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode('');
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => {
+              hardwareScannerRef.current?.focus();
+              console.log('Hardware scanner refocused');
+            }, 100);
           }
-        );
+        };
+        
+        setTimeout(() => {
+          Alert.alert(
+            'Try a Different Barcode',
+            `This product belongs to ${product.destination}, not Nevis.\n\nPlease scan a package designated for Nevis.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}`,
+            [
+              {
+                text: 'Scan Another',
+                style: 'default',
+                onPress: resetScannerState
+              }
+            ],
+            { 
+              cancelable: true,
+              onDismiss: resetScannerState
+            }
+          );
+        }, 50);
+        
         return;
       }
       
       if (product.status !== 'transferred') {
         console.log('Product status invalid for Nevis receiving:', product.status);
-        setScanned(false);
-        isNavigatingRef.current = false;
+        
+        if (Platform.OS !== 'web') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
+            console.log('Haptic error:', e)
+          );
+        }
+        
+        const resetScannerState = () => {
+          console.log('Resetting scanner state after status error');
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode('');
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => {
+              hardwareScannerRef.current?.focus();
+              console.log('Hardware scanner refocused');
+            }, 100);
+          }
+        };
         
         let errorMessage = '';
         
@@ -186,33 +249,24 @@ export default function NevisScannerScreen() {
           errorMessage = `This product is not ready to be received.\n\nPlease scan a different package.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}\nCurrent status: ${product.status}`;
         }
         
-        Alert.alert(
-          'Try a Different Barcode',
-          errorMessage,
-          [
-            {
-              text: 'Scan Another',
-              style: 'default',
-              onPress: () => {
-                console.log('User dismissed error, resetting scanner state');
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
+        setTimeout(() => {
+          Alert.alert(
+            'Try a Different Barcode',
+            errorMessage,
+            [
+              {
+                text: 'Scan Another',
+                style: 'default',
+                onPress: resetScannerState
               }
+            ],
+            { 
+              cancelable: true,
+              onDismiss: resetScannerState
             }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: () => {
-              console.log('Alert dismissed, resetting scanner state');
-              if (scanMode === 'scanner') {
-                setHardwareScannerInput('');
-                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-              }
-            }
-          }
-        );
+          );
+        }, 50);
+        
         return;
       }
       
@@ -258,24 +312,37 @@ export default function NevisScannerScreen() {
       }, 100);
     } catch (error) {
       console.error('Error processing barcode:', error);
-      setScanned(false);
-      isNavigatingRef.current = false;
       
-      Alert.alert(
-        'Error',
-        'An error occurred while processing the barcode. Please try again.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (scanMode === 'scanner') {
-                setHardwareScannerInput('');
-                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-              }
+      const resetScannerState = () => {
+        console.log('Resetting scanner state after catch error');
+        setScanned(false);
+        isNavigatingRef.current = false;
+        setLastScannedBarcode('');
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setTimeout(() => {
+            hardwareScannerRef.current?.focus();
+            console.log('Hardware scanner refocused');
+          }, 100);
+        }
+      };
+      
+      setTimeout(() => {
+        Alert.alert(
+          'Error',
+          'An error occurred while processing the barcode. Please try again.',
+          [
+            {
+              text: 'OK',
+              onPress: resetScannerState
             }
+          ],
+          {
+            cancelable: true,
+            onDismiss: resetScannerState
           }
-        ]
-      );
+        );
+      }, 50);
     }
   }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode]);
 
