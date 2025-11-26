@@ -22,8 +22,11 @@ export default function NevisScannerScreen() {
   const { hasPrivilege } = useAuth();
   const { updateProduct, products } = useInventory();
 
+  const hasCheckedPermission = useRef(false);
+
   useEffect(() => {
-    if (!hasPrivilege('nevisReceiving')) {
+    if (!hasCheckedPermission.current && !hasPrivilege('nevisReceiving')) {
+      hasCheckedPermission.current = true;
       Alert.alert(
         'Access Denied',
         'You do not have permission to access the scanner.',
@@ -42,7 +45,7 @@ export default function NevisScannerScreen() {
         { cancelable: false }
       );
     }
-  }, [hasPrivilege, router]);
+  }, []);
   
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -146,13 +149,6 @@ export default function NevisScannerScreen() {
       
       console.log('Invalid product for Nevis receiving:', trimmedBarcode, 'Status:', product.status, 'Destination:', product.destination);
       
-      setScanned(false);
-      isNavigatingRef.current = false;
-      
-      if (scanMode === 'scanner') {
-        setHardwareScannerInput('');
-      }
-      
       Alert.alert(
         errorTitle,
         errorMessage,
@@ -161,6 +157,7 @@ export default function NevisScannerScreen() {
             text: 'Scan Another',
             style: 'default',
             onPress: () => {
+              console.log('User dismissed error, resetting scanner state');
               setScanned(false);
               isNavigatingRef.current = false;
               if (scanMode === 'scanner') {
@@ -173,6 +170,7 @@ export default function NevisScannerScreen() {
         { 
           cancelable: true,
           onDismiss: () => {
+            console.log('Alert dismissed, resetting scanner state');
             setScanned(false);
             isNavigatingRef.current = false;
             if (scanMode === 'scanner') {
