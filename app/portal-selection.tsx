@@ -77,8 +77,9 @@ export default function PortalSelectionScreen() {
     router.push(route as any);
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/login');
   };
 
   const handleToolsPress = () => {
