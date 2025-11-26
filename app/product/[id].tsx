@@ -138,17 +138,18 @@ export default function ProductDetailScreen() {
   };
 
   const handleSave = () => {
-    if (!barcode.trim()) {
-      Alert.alert('Error', 'Barcode cannot be empty');
-      return;
-    }
+    try {
+      if (!barcode.trim()) {
+        Alert.alert('Error', 'Barcode cannot be empty');
+        return;
+      }
 
-    if (!storageLocation.trim()) {
-      Alert.alert('Error', 'Storage location is required');
-      return;
-    }
+      if (!storageLocation.trim()) {
+        Alert.alert('Error', 'Storage location is required');
+        return;
+      }
 
-    updateProduct(params.id, {
+      updateProduct(params.id, {
       barcode: barcode.trim(),
       status,
       storageLocation: storageLocation.trim(),
@@ -159,15 +160,19 @@ export default function ProductDetailScreen() {
       comment: comment.trim() || undefined,
     });
 
-    Alert.alert('Success', 'Package updated successfully', [
-      { text: 'OK', onPress: () => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)');
-        }
-      }},
-    ]);
+      Alert.alert('Success', 'Package updated successfully', [
+        { text: 'OK', onPress: () => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        }},
+      ]);
+    } catch (error) {
+      console.error('Error saving product:', error);
+      Alert.alert('Error', 'Failed to save changes. Please try again.');
+    }
   };
 
   const handleDelete = () => {

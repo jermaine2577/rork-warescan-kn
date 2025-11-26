@@ -86,6 +86,11 @@ export default function NevisReleasingScreen() {
       return;
     }
     
+    if (!data || typeof data !== 'string') {
+      console.error('Invalid barcode data type:', typeof data);
+      return;
+    }
+    
     console.log('Processing barcode scan:', data);
     
     const trimmedData = data.trim();
@@ -127,7 +132,23 @@ export default function NevisReleasingScreen() {
     setScanned(true);
     setIsProcessing(true);
     
-    const product = getProductByBarcode(trimmedData);
+    let product;
+    try {
+      product = getProductByBarcode(trimmedData);
+    } catch (findError) {
+      console.error('Error finding product:', findError);
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      resetState();
+      Alert.alert('Error', 'Failed to search for product. Please try again.');
+      return;
+    }
     
     if (!product) {
       setShowScanner(false);
@@ -222,12 +243,19 @@ export default function NevisReleasingScreen() {
       return;
     }
 
-    setShowScanner(false);
-    setTimeout(() => {
-      setSelectedProduct(product.id);
-      setIsProcessing(false);
+    try {
+      setShowScanner(false);
+      setTimeout(() => {
+        setSelectedProduct(product.id);
+        setIsProcessing(false);
+        setScanned(false);
+      }, 400);
+    } catch (error) {
+      console.error('Error showing product confirmation:', error);
       setScanned(false);
-    }, 400);
+      setIsProcessing(false);
+      Alert.alert('Error', 'An error occurred. Please try again.');
+    }
   }, [scanned, isProcessing, getProductByBarcode, scanMode]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {

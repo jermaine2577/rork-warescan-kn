@@ -385,26 +385,33 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   }, [products, saveProductsMutate, getEffectiveOwnerId]);
 
   const releaseProduct = useCallback((id: string, username?: string) => {
-    const ownerId = getEffectiveOwnerId();
-    const updatedProducts = products.map(p =>
-      p.id === id && p.ownerId === ownerId
-        ? {
-            ...p,
-            status: 'released' as const,
-            dateReleased: new Date().toISOString(),
-            dateUpdated: new Date().toISOString(),
-            releasedBy: username,
+    try {
+      const ownerId = getEffectiveOwnerId();
+      const updatedProducts = products.map(p =>
+        p.id === id && p.ownerId === ownerId
+          ? {
+              ...p,
+              status: 'released' as const,
+              dateReleased: new Date().toISOString(),
+              dateUpdated: new Date().toISOString(),
+              releasedBy: username,
+            }
+          : p
+      );
+      const updatedProduct = updatedProducts.find(p => p.id === id);
+      saveProductsMutate(updatedProducts, {
+        onSuccess: () => {
+          if (updatedProduct) {
+            syncSingleProductToFirestore(updatedProduct, ownerId);
           }
-        : p
-    );
-    const updatedProduct = updatedProducts.find(p => p.id === id);
-    saveProductsMutate(updatedProducts, {
-      onSuccess: () => {
-        if (updatedProduct) {
-          syncSingleProductToFirestore(updatedProduct, ownerId);
+        },
+        onError: (error) => {
+          console.error('Failed to release product:', error);
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Critical error in releaseProduct:', error);
+    }
   }, [products, saveProductsMutate, getEffectiveOwnerId]);
 
   const transferProduct = useCallback((id: string, username?: string) => {

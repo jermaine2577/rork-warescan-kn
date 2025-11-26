@@ -69,7 +69,12 @@ export default function NevisScannerScreen() {
   const processBarcode = useCallback(async (data: string, source: 'camera' | 'scanner') => {
     try {
       if (scanned || isNavigatingRef.current) {
-        console.log('Scan already in progress, ignoring...');
+        console.log('Scan already in progress, ignoring duplicate scan');
+        return;
+      }
+      
+      if (!data || typeof data !== 'string') {
+        console.error('Invalid barcode data type:', typeof data);
         return;
       }
       
@@ -122,7 +127,15 @@ export default function NevisScannerScreen() {
         return;
       }
       
-      const product = products.find(p => p.barcode === trimmedBarcode);
+      let product;
+      try {
+        product = products.find(p => p.barcode === trimmedBarcode);
+      } catch (findError) {
+        console.error('Error finding product:', findError);
+        setScanned(false);
+        isNavigatingRef.current = false;
+        return;
+      }
       
       if (!product) {
         console.log('Product not found in inventory:', trimmedBarcode);
@@ -272,14 +285,31 @@ export default function NevisScannerScreen() {
       
       console.log('Product is valid for receiving. Processing...');
       isNavigatingRef.current = true;
-      await playSuccessFeedback();
+      
+      try {
+        await playSuccessFeedback();
+      } catch (feedbackError) {
+        console.log('Feedback error (non-critical):', feedbackError);
+      }
 
-      updateProduct(product.id, {
-        status: 'received',
-        barcode: product.barcode,
-        storageLocation: product.storageLocation,
-        destination: product.destination,
-      });
+      try {
+        updateProduct(product.id, {
+          status: 'received',
+          barcode: product.barcode,
+          storageLocation: product.storageLocation,
+          destination: product.destination,
+        });
+      } catch (updateError) {
+        console.error('Failed to update product:', updateError);
+        setScanned(false);
+        isNavigatingRef.current = false;
+        Alert.alert(
+          'Update Failed',
+          'Failed to update product status. Please try again.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
 
       setTimeout(() => {
         Alert.alert(
@@ -310,40 +340,59 @@ export default function NevisScannerScreen() {
         );
       }, 100);
     } catch (error) {
-      console.error('Error processing barcode:', error);
+      console.error('CRITICAL: Error processing barcode:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'N/A',
+        barcode: data,
+        source
+      });
       
       const resetScannerState = () => {
-        console.log('Resetting scanner state after catch error');
-        setScanned(false);
-        isNavigatingRef.current = false;
-        setLastScannedBarcode('');
-        if (scanMode === 'scanner') {
-          setHardwareScannerInput('');
-          setTimeout(() => {
-            hardwareScannerRef.current?.focus();
-            console.log('Hardware scanner refocused');
-          }, 150);
+        console.log('Emergency reset: Resetting all scanner state');
+        try {
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode('');
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => {
+              try {
+                hardwareScannerRef.current?.focus();
+                console.log('Hardware scanner refocused');
+              } catch (focusError) {
+                console.log('Could not refocus scanner (non-critical)');
+              }
+            }, 150);
+          }
+        } catch (resetError) {
+          console.error('Error during reset (non-critical):', resetError);
         }
       };
       
-      Alert.alert(
-        'Error',
-        'An error occurred while processing the barcode. Please try again.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              resetScannerState();
+      resetScannerState();
+      
+      setTimeout(() => {
+        try {
+          Alert.alert(
+            'Processing Error',
+            'An error occurred while processing the barcode. The scanner has been reset. Please try scanning again.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  console.log('User acknowledged error');
+                }
+              }
+            ],
+            {
+              cancelable: true
             }
-          }
-        ],
-        {
-          cancelable: true,
-          onDismiss: () => {
-            resetScannerState();
-          }
+          );
+        } catch (alertError) {
+          console.error('Could not show alert (non-critical):', alertError);
         }
-      );
+      }, 100);
     }
   }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode]);
 
