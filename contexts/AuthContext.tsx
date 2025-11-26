@@ -370,11 +370,12 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const sessionQuery = useQuery({
     queryKey: ['session'],
     queryFn: loadSession,
-    staleTime: Infinity,
+    staleTime: 30000,
     gcTime: Infinity,
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
+    refetchInterval: false,
   });
 
   const users = useMemo(() => usersQuery.data || [], [usersQuery.data]);
@@ -578,6 +579,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const isAuthenticated = useMemo(() => !!session, [session]);
   
+  const isInitialLoading = useMemo(
+    () => usersQuery.isLoading || (sessionQuery.isLoading && !sessionQuery.data && sessionQuery.fetchStatus === 'fetching'),
+    [usersQuery.isLoading, sessionQuery.isLoading, sessionQuery.data, sessionQuery.fetchStatus]
+  );
+  
   const getUserByUsername = useCallback(
     (username: string) => users.find((u) => u.username.toLowerCase() === username.toLowerCase()),
     [users]
@@ -777,7 +783,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       currentUser,
       subUsers,
       isAuthenticated,
-      isLoading: usersQuery.isLoading || sessionQuery.isLoading,
+      isLoading: isInitialLoading,
       register: registerMutation.mutateAsync,
       login: loginMutation.mutateAsync,
       logout,
@@ -802,8 +808,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       currentUser,
       subUsers,
       isAuthenticated,
-      usersQuery.isLoading,
-      sessionQuery.isLoading,
+      isInitialLoading,
       registerMutation.mutateAsync,
       loginMutation.mutateAsync,
       logout,

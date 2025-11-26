@@ -142,6 +142,9 @@ export default function NevisScannerScreen() {
         errorMessage = `This product is not ready to be received.\n\nBarcode: ${trimmedBarcode}\nCustomer: ${product.customerName || 'N/A'}\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
       }
       
+      setScanned(false);
+      isNavigatingRef.current = false;
+      
       Alert.alert(
         'Cannot Receive Product',
         errorMessage,
@@ -150,8 +153,6 @@ export default function NevisScannerScreen() {
             text: 'OK',
             style: 'cancel',
             onPress: () => {
-              setScanned(false);
-              isNavigatingRef.current = false;
               if (scanMode === 'scanner') {
                 setHardwareScannerInput('');
                 setTimeout(() => hardwareScannerRef.current?.focus(), 100);
@@ -159,8 +160,16 @@ export default function NevisScannerScreen() {
             }
           }
         ],
-        { cancelable: false }
+        { cancelable: true }
       );
+      
+      if (scanMode === 'scanner') {
+        setTimeout(() => {
+          setHardwareScannerInput('');
+          hardwareScannerRef.current?.focus();
+        }, 100);
+      }
+      
       return;
     }
     await playSuccessFeedback();
