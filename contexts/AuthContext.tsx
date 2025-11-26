@@ -490,9 +490,15 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   });
 
   const logout = useCallback(async () => {
-    await saveSession(null);
-    queryClient.setQueryData(['session'], null);
-    queryClient.clear();
+    console.log('Logging out user...');
+    try {
+      await saveSession(null);
+      queryClient.setQueryData(['session'], null);
+      await queryClient.clear();
+      console.log('✓ Logout successful');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   }, [queryClient]);
 
   const deleteUserMutation = useMutation({

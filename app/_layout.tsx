@@ -22,27 +22,34 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const hasNavigatedRef = React.useRef(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      hasNavigatedRef.current = false;
+      return;
+    }
 
     const inAuthGroup = segments[0] === 'login';
     const inPortalSelection = segments[0] === 'portal-selection';
     const inTabs = segments[0] === '(tabs)';
 
     if (!isAuthenticated && !inAuthGroup) {
+      console.log('User not authenticated, redirecting to login');
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
         router.replace('/login');
       }
     } else if (isAuthenticated && inAuthGroup) {
+      console.log('User authenticated, redirecting to portal selection');
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
         router.replace('/portal-selection');
       }
-    } else if (isAuthenticated && !inPortalSelection && !inTabs && segments[0] !== 'scanner' && segments[0] !== 'add-product' && !segments[0]?.startsWith('product') && segments[0] !== 'nevis-scanner') {
+    } else if (isAuthenticated && !inPortalSelection && !inTabs && segments[0] !== 'scanner' && segments[0] !== 'add-product' && !segments[0]?.startsWith('product') && segments[0] !== 'nevis-scanner' && segments[0] !== 'storage-locations') {
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
         router.replace('/portal-selection');
       }
+    } else {
+      hasNavigatedRef.current = false;
     }
   }, [isAuthenticated, isLoading, segments, router]);
 

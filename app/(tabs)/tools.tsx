@@ -1369,10 +1369,10 @@ export default function ToolsScreen() {
             • Column names are case-insensitive and flexible
           </Text>
           <Text style={styles.infoText}>
-            • Air Way Bill # can be named: "AWB", "Barcode", "Air Way Bill"
+            • Air Way Bill # can be named: &quot;AWB&quot;, &quot;Barcode&quot;, &quot;Air Way Bill&quot;
           </Text>
           <Text style={styles.infoText}>
-            • Store Location can be: "Saint Kitts", "St Kitts", "Nevis"
+            • Store Location can be: &quot;Saint Kitts&quot;, &quot;St Kitts&quot;, &quot;Nevis&quot;
           </Text>
           <Text style={styles.infoText}>
             • Customer Name, Price, and Comment are optional
@@ -1501,7 +1501,7 @@ export default function ToolsScreen() {
             </View>
 
             <Text style={styles.previewDescription}>
-              These packages will be imported with <Text style={styles.boldText}>"Uploaded"</Text> status. After importing, scan each package to mark it as <Text style={styles.boldText}>"Validated"</Text>.
+              These packages will be imported with <Text style={styles.boldText}>&quot;Uploaded&quot;</Text> status. After importing, scan each package to mark it as <Text style={styles.boldText}>&quot;Validated&quot;</Text>.
             </Text>
 
             <ScrollView style={styles.previewList}>

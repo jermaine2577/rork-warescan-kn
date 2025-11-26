@@ -272,18 +272,23 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     const loadUserId = async () => {
       const userId = await getCurrentUserId();
       console.log('Current user ID loaded:', userId);
-      setCurrentUserId(userId);
       
       const currentUser = await getCurrentUser();
       const effectiveId = getEffectiveOwnerIdForUser(currentUser);
-      console.log('Effective owner ID:', effectiveId);
+      console.log('Current user role:', currentUser?.role, 'Effective owner ID:', effectiveId);
+      
+      if (currentUser?.role === 'sub-user' && currentUser?.managerId) {
+        console.log('Employee detected, using manager ID:', currentUser.managerId);
+      }
+      
+      setCurrentUserId(userId);
       setEffectiveOwnerId(effectiveId);
     };
     loadUserId();
     
     const interval = setInterval(() => {
       loadUserId();
-    }, 1000);
+    }, 2000);
     
     return () => clearInterval(interval);
   }, []);

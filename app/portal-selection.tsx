@@ -78,8 +78,15 @@ export default function PortalSelectionScreen() {
   };
 
   const handleLogout = async () => {
-    await logout();
-    router.replace('/login');
+    console.log('Logging out from portal selection...');
+    try {
+      await logout();
+      console.log('Navigating to login screen...');
+      router.replace('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+      router.replace('/login');
+    }
   };
 
   const handleToolsPress = () => {
@@ -121,7 +128,8 @@ export default function PortalSelectionScreen() {
             <Package size={64} color="#D1D5DB" />
             <Text style={styles.noAccessTitle}>No Portal Access</Text>
             <Text style={styles.noAccessText}>
-              You don&apos;t have access to any portals yet. Please contact your administrator to request access.
+              You don&apos;t have access to any portals yet.{' \n'}
+              Please contact your administrator to request access.
             </Text>
           </View>
         ) : (

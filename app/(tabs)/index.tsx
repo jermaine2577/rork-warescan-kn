@@ -248,7 +248,7 @@ export default function InventoryScreen() {
       <View style={styles.loadingContainer}>
         <AlertCircle size={64} color="#EF4444" />
         <Text style={styles.noAccessTitle}>Access Denied</Text>
-        <Text style={styles.noAccessText}>You don't have permission to access the Receiving Portal. Please contact your administrator.</Text>
+        <Text style={styles.noAccessText}>You don&apos;t have permission to access the Receiving Portal. Please contact your administrator.</Text>
       </View>
     );
   }
