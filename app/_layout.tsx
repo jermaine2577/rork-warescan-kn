@@ -20,6 +20,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const router = useRouter();
   const hasNavigatedRef = React.useRef(false);
+  const lastAuthStateRef = React.useRef(isAuthenticated);
 
   useEffect(() => {
     if (isLoading) {
@@ -35,20 +36,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       console.log('User not authenticated, redirecting to login');
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
+        lastAuthStateRef.current = false;
         router.replace('/login');
       }
     } else if (isAuthenticated && inAuthGroup) {
       console.log('User authenticated, redirecting to portal selection');
       if (!hasNavigatedRef.current) {
         hasNavigatedRef.current = true;
-        router.replace('/portal-selection');
-      }
-    } else if (isAuthenticated && !inPortalSelection && !inTabs && segments[0] !== 'scanner' && segments[0] !== 'add-product' && !segments[0]?.startsWith('product') && segments[0] !== 'nevis-scanner' && segments[0] !== 'storage-locations') {
-      if (!hasNavigatedRef.current) {
-        hasNavigatedRef.current = true;
+        lastAuthStateRef.current = true;
         router.replace('/portal-selection');
       }
     } else {
+      lastAuthStateRef.current = isAuthenticated;
       hasNavigatedRef.current = false;
     }
   }, [isAuthenticated, isLoading, segments, router]);
