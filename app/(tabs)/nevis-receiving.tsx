@@ -46,10 +46,11 @@ export default function NevisReceivingScreen() {
   const [showReceivingModal, setShowReceivingModal] = useState(false);
   const [receivingProduct, setReceivingProduct] = useState<Product | null>(null);
 
-  const transferredToNevisProducts = useMemo(() => {
+  const nevisProducts = useMemo(() => {
     const searchLower = searchQuery.toLowerCase();
     return products.filter((p) => {
-      if (p.status !== 'transferred' || p.destination !== 'Nevis') return false;
+      if (p.destination !== 'Nevis') return false;
+      if (p.status !== 'transferred' && p.status !== 'received') return false;
       
       const matchesSearch =
         searchQuery === '' ||
@@ -131,35 +132,49 @@ export default function NevisReceivingScreen() {
           </View>
         </View>
         <View style={styles.badgeContainer}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: '#6366F1' },
-            ]}
-          >
-            <CheckCircle size={14} color="#FFFFFF" style={styles.badgeIcon} />
-            <Text style={styles.statusText}>Transferred</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.receiveButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleMarkReceived(item);
-            }}
-          >
-            <CheckCircle size={16} color="#10B981" />
-            <Text style={styles.receiveButtonText}>Receive</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.revertButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleRevert(item);
-            }}
-          >
-            <RotateCcw size={16} color="#F59E0B" />
-            <Text style={styles.revertButtonText}>Revert</Text>
-          </TouchableOpacity>
+          {item.status === 'transferred' ? (
+            <>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: '#6366F1' },
+                ]}
+              >
+                <CheckCircle size={14} color="#FFFFFF" style={styles.badgeIcon} />
+                <Text style={styles.statusText}>Transferred</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.receiveButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleMarkReceived(item);
+                }}
+              >
+                <CheckCircle size={16} color="#10B981" />
+                <Text style={styles.receiveButtonText}>Receive</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.revertButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  handleRevert(item);
+                }}
+              >
+                <RotateCcw size={16} color="#F59E0B" />
+                <Text style={styles.revertButtonText}>Revert</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: '#10B981' },
+              ]}
+            >
+              <CheckCircle size={14} color="#FFFFFF" style={styles.badgeIcon} />
+              <Text style={styles.statusText}>Accepted</Text>
+            </View>
+          )}
         </View>
       </View>
       <View style={styles.productFooter}>
@@ -250,11 +265,19 @@ export default function NevisReceivingScreen() {
       />
       
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={[styles.statValue, { color: '#6366F1' }]}>
-            {transferredToNevisProducts.length}
-          </Text>
-          <Text style={styles.statLabel}>Transferred to Nevis</Text>
+        <View style={styles.statsRow}>
+          <View style={[styles.statCard, { flex: 1 }]}>
+            <Text style={[styles.statValue, { color: '#6366F1' }]}>
+              {nevisProducts.filter(p => p.status === 'transferred').length}
+            </Text>
+            <Text style={styles.statLabel}>Transferred</Text>
+          </View>
+          <View style={[styles.statCard, { flex: 1 }]}>
+            <Text style={[styles.statValue, { color: '#10B981' }]}>
+              {nevisProducts.filter(p => p.status === 'received').length}
+            </Text>
+            <Text style={styles.statLabel}>Accepted</Text>
+          </View>
         </View>
       </View>
 
@@ -278,7 +301,7 @@ export default function NevisReceivingScreen() {
       </View>
 
       <FlatList
-        data={transferredToNevisProducts}
+        data={nevisProducts}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         initialNumToRender={10}
@@ -446,6 +469,10 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
     paddingHorizontal: 16,
     paddingVertical: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
   },
   statCard: {
     backgroundColor: '#EDE9FE',
