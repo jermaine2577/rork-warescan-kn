@@ -2,12 +2,22 @@
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
   "devCommand": "npx expo start --web",
-  "framework": null,
-  "installCommand": "npm install",
-  "rewrites": [
+  "installCommand": "bun install",
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|ico|png|jpg|jpeg|svg|gif))",
+      "dest": "/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
