@@ -372,7 +372,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     queryFn: loadSession,
     staleTime: Infinity,
     gcTime: Infinity,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
