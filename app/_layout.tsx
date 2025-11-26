@@ -19,37 +19,52 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const hasNavigatedRef = React.useRef(false);
+  const navigationTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAuthStateRef = React.useRef(isAuthenticated);
+  const isNavigatingRef = React.useRef(false);
 
   useEffect(() => {
     if (isLoading) {
-      hasNavigatedRef.current = false;
       return;
     }
 
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
+      navigationTimeoutRef.current = null;
+    }
+
     const inAuthGroup = segments[0] === 'login';
-    const inPortalSelection = segments[0] === 'portal-selection';
-    const inTabs = segments[0] === '(tabs)';
+    const authStateChanged = lastAuthStateRef.current !== isAuthenticated;
+    lastAuthStateRef.current = isAuthenticated;
 
     if (!isAuthenticated && !inAuthGroup) {
       console.log('User not authenticated, redirecting to login');
-      if (!hasNavigatedRef.current) {
-        hasNavigatedRef.current = true;
-        lastAuthStateRef.current = false;
-        router.replace('/login');
+      if (!isNavigatingRef.current) {
+        isNavigatingRef.current = true;
+        navigationTimeoutRef.current = setTimeout(() => {
+          router.replace('/login');
+          isNavigatingRef.current = false;
+        }, 100);
       }
-    } else if (isAuthenticated && inAuthGroup) {
-      console.log('User authenticated, redirecting to portal selection');
-      if (!hasNavigatedRef.current) {
-        hasNavigatedRef.current = true;
-        lastAuthStateRef.current = true;
-        router.replace('/portal-selection');
+    } else if (isAuthenticated && inAuthGroup && authStateChanged) {
+      console.log('User just authenticated, redirecting to portal selection');
+      if (!isNavigatingRef.current) {
+        isNavigatingRef.current = true;
+        navigationTimeoutRef.current = setTimeout(() => {
+          router.replace('/portal-selection');
+          isNavigatingRef.current = false;
+        }, 100);
       }
     } else {
-      lastAuthStateRef.current = isAuthenticated;
-      hasNavigatedRef.current = false;
+      isNavigatingRef.current = false;
     }
+
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+        navigationTimeoutRef.current = null;
+      }
+    };
   }, [isAuthenticated, isLoading, segments, router]);
 
   if (isLoading) {
