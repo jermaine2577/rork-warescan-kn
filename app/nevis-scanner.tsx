@@ -14,36 +14,13 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
-import { useAuth } from '@/contexts/AuthContext';
 import { useInventory } from '@/contexts/InventoryContext';
 
 export default function NevisScannerScreen() {
   const router = useRouter();
-  const { hasPrivilege } = useAuth();
   const { updateProduct, products } = useInventory();
 
-  useEffect(() => {
-    if (!hasPrivilege('nevisReceiving')) {
-      Alert.alert(
-        'Access Denied',
-        'You do not have permission to access the scanner.',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/nevis-receiving');
-              }
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-      return;
-    }
-  }, [hasPrivilege, router]);
+
   
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -106,6 +83,8 @@ export default function NevisScannerScreen() {
     const product = products.find(p => p.barcode === trimmedBarcode);
     
     if (!product) {
+      setScanned(false);
+      isNavigatingRef.current = false;
       Alert.alert(
         'Product Not Found',
         `No product found with barcode: ${trimmedBarcode}`,
@@ -125,6 +104,9 @@ export default function NevisScannerScreen() {
     }
     
     if (product.status !== 'transferred' || product.destination !== 'Nevis') {
+      setScanned(false);
+      isNavigatingRef.current = false;
+      
       let errorTitle = 'Try a Different Barcode';
       let errorMessage = '';
       
