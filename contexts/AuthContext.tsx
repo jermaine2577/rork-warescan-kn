@@ -22,6 +22,8 @@ export interface PortalPrivileges {
   uploadExcel: boolean;
   exportExcel: boolean;
   resetData: boolean;
+  editStorageLocation: boolean;
+  editProductDetails: boolean;
 }
 
 export interface User {

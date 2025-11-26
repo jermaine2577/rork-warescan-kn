@@ -1,11 +1,11 @@
 import { useInventory } from '@/contexts/InventoryContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Save,
   X,
   Trash2,
   Package,
-  MapPin,
   Clock,
   Calendar,
 } from 'lucide-react-native';
@@ -20,7 +20,6 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
-  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProductStatus, Destination } from '@/types/inventory';
@@ -30,6 +29,7 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const { products, updateProduct, deleteProduct, isSaving } = useInventory();
+  const { hasPrivilege } = useAuth();
 
   const product = products.find((p) => p.id === params.id);
 
@@ -41,20 +41,10 @@ export default function ProductDetailScreen() {
   const [customerName, setCustomerName] = useState('');
   const [price, setPrice] = useState('');
   const [comment, setComment] = useState('');
-  const [showStorageCodeModal, setShowStorageCodeModal] = useState(false);
-  const [showDestinationCodeModal, setShowDestinationCodeModal] = useState(false);
-  const [showBarcodeCodeModal, setShowBarcodeCodeModal] = useState(false);
-  const [masterCode, setMasterCode] = useState('');
-  const [originalStorageLocation, setOriginalStorageLocation] = useState('');
-  const [originalDestination, setOriginalDestination] = useState<Destination>('Saint Kitts');
-  const [originalBarcode, setOriginalBarcode] = useState('');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [showDestinationPicker, setShowDestinationPicker] = useState(false);
-  const [isBarcodeEditable, setIsBarcodeEditable] = useState(false);
-  const [isStorageUnlocked, setIsStorageUnlocked] = useState(false);
-  const [isDestinationUnlocked, setIsDestinationUnlocked] = useState(false);
-  const codeInputRef = useRef<TextInput>(null);
   const barcodeInputRef = useRef<TextInput>(null);
+  const [isBarcodeEditable, setIsBarcodeEditable] = useState(false);
   
   const storageLocations = (() => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -71,12 +61,9 @@ export default function ProductDetailScreen() {
   useEffect(() => {
     if (product) {
       setBarcode(product.barcode);
-      setOriginalBarcode(product.barcode);
       setStatus(product.status);
       setStorageLocation(product.storageLocation);
-      setOriginalStorageLocation(product.storageLocation);
       setDestination(product.destination);
-      setOriginalDestination(product.destination);
       setNotes(product.notes || '');
       setCustomerName(product.customerName || '');
       setPrice(product.price || '');
@@ -111,60 +98,43 @@ export default function ProductDetailScreen() {
 
 
 
-  const handleStorageCodeVerify = () => {
-    if (masterCode === '4086') {
-      setShowStorageCodeModal(false);
-      setMasterCode('');
-      setIsStorageUnlocked(true);
-      setShowLocationPicker(true);
-    } else {
-      Alert.alert('Invalid Code', 'The master code you entered is incorrect.');
-      setMasterCode('');
+  const canEditStorageLocation = hasPrivilege('editStorageLocation');
+  const canEditProductDetails = hasPrivilege('editProductDetails');
+
+  const handleStorageLocationPress = () => {
+    if (!canEditStorageLocation && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated')) {
+      Alert.alert(
+        'Access Denied',
+        'You do not have permission to edit storage locations for uploaded products. Please contact your administrator.'
+      );
+      return;
     }
+    setShowLocationPicker(!showLocationPicker);
   };
 
-  const handleCloseStorageCodeModal = () => {
-    setShowStorageCodeModal(false);
-    setMasterCode('');
-    setStorageLocation(originalStorageLocation);
-  };
-
-  const handleDestinationCodeVerify = () => {
-    if (masterCode === '4086') {
-      setShowDestinationCodeModal(false);
-      setMasterCode('');
-      setIsDestinationUnlocked(true);
-      setShowDestinationPicker(true);
-    } else {
-      Alert.alert('Invalid Code', 'The master code you entered is incorrect.');
-      setMasterCode('');
+  const handleDestinationPress = () => {
+    if (!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated')) {
+      Alert.alert(
+        'Access Denied', 
+        'You do not have permission to edit product details for uploaded products. Please contact your administrator.'
+      );
+      return;
     }
+    setShowDestinationPicker(!showDestinationPicker);
   };
 
-  const handleCloseDestinationCodeModal = () => {
-    setShowDestinationCodeModal(false);
-    setMasterCode('');
-    setDestination(originalDestination);
-  };
-
-  const handleBarcodeCodeVerify = () => {
-    if (masterCode === '4086') {
-      setShowBarcodeCodeModal(false);
-      setMasterCode('');
-      setIsBarcodeEditable(true);
-      setTimeout(() => {
-        barcodeInputRef.current?.focus();
-      }, 100);
-    } else {
-      Alert.alert('Invalid Code', 'The master code you entered is incorrect.');
-      setMasterCode('');
+  const handleBarcodePress = () => {
+    if (!canEditProductDetails) {
+      Alert.alert(
+        'Access Denied',
+        'You do not have permission to edit barcodes. Please contact your administrator.'
+      );
+      return;
     }
-  };
-
-  const handleCloseBarcodeCodeModal = () => {
-    setShowBarcodeCodeModal(false);
-    setMasterCode('');
-    setBarcode(originalBarcode);
+    setIsBarcodeEditable(true);
+    setTimeout(() => {
+      barcodeInputRef.current?.focus();
+    }, 100);
   };
 
   const handleSave = () => {
@@ -198,29 +168,24 @@ export default function ProductDetailScreen() {
   };
 
   const handleDelete = () => {
-    Alert.prompt(
-      'Master Code Required',
-      'Enter the master code to delete this package:',
+    Alert.alert(
+      'Delete Package',
+      'Are you sure you want to delete this package? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: (code?: string) => {
-            if (code === '4086') {
-              deleteProduct(params.id);
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)');
-              }
+          onPress: () => {
+            deleteProduct(params.id);
+            if (router.canGoBack()) {
+              router.back();
             } else {
-              Alert.alert('Invalid Code', 'The master code you entered is incorrect.');
+              router.replace('/(tabs)');
             }
           },
         },
-      ],
-      'secure-text'
+      ]
     );
   };
 
@@ -288,7 +253,7 @@ export default function ProductDetailScreen() {
             style={styles.barcodeContainer}
             onPress={() => {
               if (!isBarcodeEditable) {
-                setShowBarcodeCodeModal(true);
+                handleBarcodePress();
               }
             }}
             activeOpacity={isBarcodeEditable ? 1 : 0.7}
@@ -305,6 +270,9 @@ export default function ProductDetailScreen() {
               pointerEvents={isBarcodeEditable ? 'auto' : 'none'}
             />
           </TouchableOpacity>
+          {!canEditProductDetails && (
+            <Text style={styles.hint}>Editing barcode requires special permission.</Text>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -337,13 +305,7 @@ export default function ProductDetailScreen() {
           <Text style={styles.label}>Storage Location *</Text>
           <TouchableOpacity
             style={styles.locationPicker}
-            onPress={() => {
-              if (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') {
-                setShowStorageCodeModal(true);
-              } else {
-                setShowLocationPicker(!showLocationPicker);
-              }
-            }}
+            onPress={handleStorageLocationPress}
           >
             <Text
               style={[
@@ -354,7 +316,7 @@ export default function ProductDetailScreen() {
               {storageLocation || 'Select storage location'}
             </Text>
           </TouchableOpacity>
-          {showLocationPicker && (!product.uploadStatus || isStorageUnlocked) && (
+          {showLocationPicker && (canEditStorageLocation || !product.uploadStatus) && (
             <ScrollView
               style={styles.locationScrollView}
               showsVerticalScrollIndicator={true}
@@ -385,8 +347,8 @@ export default function ProductDetailScreen() {
               </View>
             </ScrollView>
           )}
-          {(product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
-            <Text style={styles.hint}>This package was uploaded from Excel. Master code required to edit.</Text>
+          {(product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && !canEditStorageLocation && (
+            <Text style={styles.hint}>This package was uploaded from Excel. Special permission required to edit.</Text>
           )}
         </View>
 
@@ -394,13 +356,7 @@ export default function ProductDetailScreen() {
           <Text style={styles.label}>Destination *</Text>
           <TouchableOpacity
             style={styles.destinationPicker}
-            onPress={() => {
-              if (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') {
-                setShowDestinationCodeModal(true);
-              } else {
-                setShowDestinationPicker(!showDestinationPicker);
-              }
-            }}
+            onPress={handleDestinationPress}
           >
             <Text
               style={[
@@ -411,7 +367,7 @@ export default function ProductDetailScreen() {
               {destination === 'Saint Kitts' ? 'St. Kitts' : destination === 'Nevis' ? 'Nevis' : 'Select destination'}
             </Text>
           </TouchableOpacity>
-          {showDestinationPicker && (!product.uploadStatus || isDestinationUnlocked) && (
+          {showDestinationPicker && (canEditProductDetails || !product.uploadStatus) && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -443,8 +399,8 @@ export default function ProductDetailScreen() {
               </View>
             </ScrollView>
           )}
-          {(product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && (
-            <Text style={styles.hint}>This package was uploaded from Excel. Master code required to edit.</Text>
+          {(product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated') && !canEditProductDetails && (
+            <Text style={styles.hint}>This package was uploaded from Excel. Special permission required to edit.</Text>
           )}
         </View>
 
@@ -497,150 +453,7 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      <Modal
-        visible={showStorageCodeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseStorageCodeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <MapPin size={32} color="#F59E0B" />
-              <Text style={styles.modalTitle}>Master Code Required</Text>
-            </View>
-            <Text style={styles.modalDescription}>
-              This package was uploaded from Excel. Enter the master code to change the storage location.
-            </Text>
-            <TextInput
-              ref={codeInputRef}
-              style={styles.codeInput}
-              value={masterCode}
-              onChangeText={setMasterCode}
-              placeholder="Enter code"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="number-pad"
-              maxLength={4}
-              secureTextEntry
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={handleCloseStorageCodeModal}
-              >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirmButton,
-                  masterCode.length !== 4 && styles.modalConfirmButtonDisabled,
-                ]}
-                onPress={handleStorageCodeVerify}
-                disabled={masterCode.length !== 4}
-              >
-                <Text style={styles.modalConfirmButtonText}>Verify</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
-      <Modal
-        visible={showDestinationCodeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseDestinationCodeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <MapPin size={32} color="#F59E0B" />
-              <Text style={styles.modalTitle}>Master Code Required</Text>
-            </View>
-            <Text style={styles.modalDescription}>
-              This package was uploaded from Excel. Enter the master code to change the destination.
-            </Text>
-            <TextInput
-              style={styles.codeInput}
-              value={masterCode}
-              onChangeText={setMasterCode}
-              placeholder="Enter code"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="number-pad"
-              maxLength={4}
-              secureTextEntry
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={handleCloseDestinationCodeModal}
-              >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirmButton,
-                  masterCode.length !== 4 && styles.modalConfirmButtonDisabled,
-                ]}
-                onPress={handleDestinationCodeVerify}
-                disabled={masterCode.length !== 4}
-              >
-                <Text style={styles.modalConfirmButtonText}>Verify</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal
-        visible={showBarcodeCodeModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseBarcodeCodeModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Package size={32} color="#F59E0B" />
-              <Text style={styles.modalTitle}>Master Code Required</Text>
-            </View>
-            <Text style={styles.modalDescription}>
-              Barcode is locked. Enter the master code to change it.
-            </Text>
-            <TextInput
-              style={styles.codeInput}
-              value={masterCode}
-              onChangeText={setMasterCode}
-              placeholder="Enter code"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="number-pad"
-              maxLength={4}
-              secureTextEntry
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={handleCloseBarcodeCodeModal}
-              >
-                <Text style={styles.modalCancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalConfirmButton,
-                  masterCode.length !== 4 && styles.modalConfirmButtonDisabled,
-                ]}
-                onPress={handleBarcodeCodeVerify}
-                disabled={masterCode.length !== 4}
-              >
-                <Text style={styles.modalConfirmButtonText}>Verify</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -874,88 +687,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#EF4444',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-    gap: 20,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: '700' as const,
-    color: '#111827',
-    textAlign: 'center',
-  },
-  modalDescription: {
-    fontSize: 15,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  codeInput: {
-    backgroundColor: '#F9FAFB',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    fontSize: 24,
-    fontWeight: '700' as const,
-    color: '#111827',
-    textAlign: 'center',
-    letterSpacing: 8,
-    ...Platform.select({
-      web: {
-        outlineStyle: 'none',
-      },
-    }),
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalCancelButton: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  modalCancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#374151',
-  },
-  modalConfirmButton: {
-    flex: 1,
-    backgroundColor: '#F59E0B',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  modalConfirmButtonDisabled: {
-    opacity: 0.4,
-  },
-  modalConfirmButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#FFFFFF',
   },
   readOnlyField: {
     backgroundColor: '#F3F4F6',

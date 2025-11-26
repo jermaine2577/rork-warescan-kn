@@ -71,6 +71,8 @@ export default function ToolsScreen() {
     uploadExcel: false,
     exportExcel: false,
     resetData: false,
+    editStorageLocation: false,
+    editProductDetails: false,
   });
   const [isCreatingEmployee, setIsCreatingEmployee] = useState(false);
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
@@ -232,6 +234,8 @@ export default function ToolsScreen() {
         uploadExcel: false,
         exportExcel: false,
         resetData: false,
+        editStorageLocation: false,
+        editProductDetails: false,
       });
 
       setTimeout(() => {
