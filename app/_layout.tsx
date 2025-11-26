@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { View, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import { Image } from 'expo-image';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initializeFirebase } from '@/config/firebase';
 
 SplashScreen.preventAutoHideAsync();
@@ -116,52 +115,6 @@ export default function RootLayout() {
         await initializeFirebase();
         console.log('✓ Firebase initialized');
         
-        const allKeys = await AsyncStorage.getAllKeys();
-        console.log('Verifying storage integrity for', allKeys.length, 'keys...');
-        
-        for (const key of allKeys) {
-          try {
-            const value = await AsyncStorage.getItem(key);
-            if (!value || !value.trim()) {
-              console.warn(`Removing empty storage key: ${key}`);
-              await AsyncStorage.removeItem(key);
-              continue;
-            }
-            
-            const trimmed = value.trim();
-            
-            if (/^(\[?object|undefined|null|NaN)/i.test(trimmed)) {
-              console.warn(`Cleaning corrupted storage key: ${key}`);
-              await AsyncStorage.removeItem(key);
-              continue;
-            }
-            
-            if (!key.includes('user_id') && trimmed.length > 0) {
-              const firstChar = trimmed[0];
-              if (firstChar !== '[' && firstChar !== '{' && firstChar !== '"') {
-                console.warn(`Cleaning invalid JSON storage key: ${key} (starts with ${firstChar})`);
-                await AsyncStorage.removeItem(key);
-                continue;
-              }
-              
-              try {
-                JSON.parse(trimmed);
-              } catch {
-                console.warn(`Cleaning unparseable storage key: ${key}`);
-                await AsyncStorage.removeItem(key);
-              }
-            }
-          } catch (error) {
-            console.error(`Error checking key ${key}:`, error);
-            try {
-              await AsyncStorage.removeItem(key);
-            } catch (removeError) {
-              console.error(`Failed to remove ${key}:`, removeError);
-            }
-          }
-        }
-        
-        console.log('✓ Storage verification complete');
         await SplashScreen.hideAsync();
       } catch (error) {
         console.error('❌ Error during initialization:', error);
@@ -178,7 +131,7 @@ export default function RootLayout() {
         setAppReady(true);
         SplashScreen.hideAsync().catch(e => console.error('Failed to hide splash:', e));
       }
-    }, 3000);
+    }, 2000);
     
     prepare();
     
