@@ -122,9 +122,22 @@ export default function NevisScannerScreen() {
     }
     
     if (product.status !== 'transferred' || product.destination !== 'Nevis') {
+      let errorMessage = '';
+      if (product.destination !== 'Nevis') {
+        errorMessage = `This product is for ${product.destination}, not Nevis.`;
+      } else if (product.status === 'received') {
+        errorMessage = `This product has already been received in Nevis.`;
+      } else if (product.status === 'released') {
+        errorMessage = `This product has already been released.`;
+      } else if (product.status === 'awaiting_from_nevis') {
+        errorMessage = `This product is awaiting return from Nevis.`;
+      } else {
+        errorMessage = `This product is not ready to be received.\nCurrent status: ${product.status}\nDestination: ${product.destination}`;
+      }
+      
       Alert.alert(
-        'Invalid Product Status',
-        `This product is not ready to be received in Nevis.\nCurrent status: ${product.status}`,
+        'Cannot Receive Product',
+        errorMessage,
         [
           {
             text: 'OK',
@@ -151,11 +164,12 @@ export default function NevisScannerScreen() {
     });
 
     Alert.alert(
-      'Success',
-      `Package ${trimmedBarcode} received in Nevis!\nCustomer: ${product.customerName || 'N/A'}`,
+      '✓ Successfully Received',
+      `Package ${trimmedBarcode} has been received in Nevis!\n\nCustomer: ${product.customerName || 'N/A'}\nStorage: ${product.storageLocation || 'N/A'}`,
       [
         {
           text: 'Scan Another',
+          style: 'default',
           onPress: () => {
             setScanned(false);
             isNavigatingRef.current = false;
@@ -164,6 +178,7 @@ export default function NevisScannerScreen() {
         },
         {
           text: 'Done',
+          style: 'cancel',
           onPress: () => {
             router.back();
           },
