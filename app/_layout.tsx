@@ -101,16 +101,42 @@ export default function RootLayout() {
         for (const key of allKeys) {
           try {
             const value = await AsyncStorage.getItem(key);
-            if (value && value.trim()) {
-              const trimmed = value.trim();
-              if (/^(\[?object|undefined|null|NaN)/i.test(trimmed)) {
-                console.warn(`Cleaning corrupted storage key: ${key}`);
+            if (!value || !value.trim()) {
+              console.warn(`Removing empty storage key: ${key}`);
+              await AsyncStorage.removeItem(key);
+              continue;
+            }
+            
+            const trimmed = value.trim();
+            
+            if (/^(\[?object|undefined|null|NaN)/i.test(trimmed)) {
+              console.warn(`Cleaning corrupted storage key: ${key}`);
+              await AsyncStorage.removeItem(key);
+              continue;
+            }
+            
+            if (!key.includes('user_id') && trimmed.length > 0) {
+              const firstChar = trimmed[0];
+              if (firstChar !== '[' && firstChar !== '{' && firstChar !== '"') {
+                console.warn(`Cleaning invalid JSON storage key: ${key} (starts with ${firstChar})`);
+                await AsyncStorage.removeItem(key);
+                continue;
+              }
+              
+              try {
+                JSON.parse(trimmed);
+              } catch {
+                console.warn(`Cleaning unparseable storage key: ${key}`);
                 await AsyncStorage.removeItem(key);
               }
             }
           } catch (error) {
             console.error(`Error checking key ${key}:`, error);
-            await AsyncStorage.removeItem(key);
+            try {
+              await AsyncStorage.removeItem(key);
+            } catch (removeError) {
+              console.error(`Failed to remove ${key}:`, removeError);
+            }
           }
         }
         
