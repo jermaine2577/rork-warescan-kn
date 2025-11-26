@@ -489,9 +489,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     },
   });
 
-  const logout = useCallback(() => {
-    mutateSession(null);
-  }, [mutateSession]);
+  const logout = useCallback(async () => {
+    await saveSession(null);
+    queryClient.setQueryData(['session'], null);
+  }, [queryClient]);
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
