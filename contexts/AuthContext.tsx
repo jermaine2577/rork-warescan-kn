@@ -376,6 +376,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const users = useMemo(() => usersQuery.data || [], [usersQuery.data]);

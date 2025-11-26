@@ -131,7 +131,7 @@ export default function RootLayout() {
         setAppReady(true);
         SplashScreen.hideAsync().catch(e => console.error('Failed to hide splash:', e));
       }
-    }, 2000);
+    }, 1000);
     
     prepare();
     
