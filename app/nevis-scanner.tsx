@@ -80,6 +80,28 @@ export default function NevisScannerScreen() {
     }
     
     const trimmedBarcode = data.trim();
+    
+    if (trimmedBarcode.startsWith('http://') || trimmedBarcode.startsWith('https://') || trimmedBarcode.includes('rork.app') || trimmedBarcode.includes('exp.direct')) {
+      console.log('Ignoring URL/QR code:', trimmedBarcode);
+      setScanned(false);
+      isNavigatingRef.current = false;
+      Alert.alert(
+        'Invalid Barcode',
+        'Please scan a product barcode, not a QR code or URL.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (scanMode === 'scanner') {
+                setHardwareScannerInput('');
+                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
     const product = products.find(p => p.barcode === trimmedBarcode);
     
     if (!product) {

@@ -87,10 +87,39 @@ export default function NevisReleasingScreen() {
     }
     
     console.log('Processing barcode scan:', data);
+    
+    const trimmedData = data.trim();
+    
+    if (trimmedData.startsWith('http://') || trimmedData.startsWith('https://') || trimmedData.includes('rork.app') || trimmedData.includes('exp.direct')) {
+      console.log('Ignoring URL/QR code:', trimmedData);
+      setShowScanner(false);
+      setTimeout(() => {
+        Alert.alert(
+          'Invalid Barcode',
+          'Please scan a product barcode, not a QR code or URL.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setScanned(false);
+                setIsProcessing(false);
+                if (scanMode === 'scanner') {
+                  setHardwareScannerInput('');
+                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+                }
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      }, 400);
+      return;
+    }
+    
     setScanned(true);
     setIsProcessing(true);
     
-    const product = getProductByBarcode(data);
+    const product = getProductByBarcode(trimmedData);
     
     if (!product) {
       setShowScanner(false);
@@ -161,7 +190,7 @@ export default function NevisReleasingScreen() {
       setIsProcessing(false);
       setScanned(false);
     }, 400);
-  }, [scanned, isProcessing, getProductByBarcode]);
+  }, [scanned, isProcessing, getProductByBarcode, scanMode]);
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     processBarcode(data);
