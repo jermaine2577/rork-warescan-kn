@@ -62,7 +62,7 @@ export default function ProductDetailScreen() {
     if (product) {
       setBarcode(product.barcode);
       setStatus(product.status);
-      setStorageLocation(product.storageLocation);
+      setStorageLocation(product.storageLocation || '');
       setDestination(product.destination);
       setNotes(product.notes || '');
       setCustomerName(product.customerName || '');
@@ -144,7 +144,7 @@ export default function ProductDetailScreen() {
         return;
       }
 
-      if (!storageLocation.trim()) {
+      if (!storageLocation || !storageLocation.trim()) {
         Alert.alert('Error', 'Storage location is required');
         return;
       }
