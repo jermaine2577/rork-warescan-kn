@@ -75,6 +75,15 @@ export default function NevisScannerScreen() {
       
       if (!data || typeof data !== 'string') {
         console.error('Invalid barcode data type:', typeof data);
+        const resetState = () => {
+          setScanned(false);
+          isNavigatingRef.current = false;
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setLastScannedBarcode('');
+          }
+        };
+        resetState();
         return;
       }
       
@@ -190,9 +199,11 @@ export default function NevisScannerScreen() {
         console.log('Product destination mismatch - belongs to', product.destination, 'not Nevis');
         
         if (Platform.OS !== 'web') {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
-            console.log('Haptic error:', e)
-          );
+          try {
+            await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          } catch (e) {
+            console.log('Haptic error (non-critical):', e);
+          }
         }
         
         const resetScannerState = () => {
@@ -206,8 +217,8 @@ export default function NevisScannerScreen() {
               try {
                 hardwareScannerRef.current?.focus();
                 console.log('Hardware scanner refocused');
-              } catch {
-                console.log('Could not refocus (non-critical)');
+              } catch (focusError) {
+                console.log('Could not refocus (non-critical):', focusError);
               }
             }, 150);
           }
@@ -219,7 +230,7 @@ export default function NevisScannerScreen() {
           try {
             Alert.alert(
               'Wrong Destination',
-              `This package belongs to ${product.destination}, not Nevis.\n\nPlease scan a different package.`,
+              `This package belongs to "${product.destination || 'Unknown'}", not Nevis.\n\nPlease use the correct receiving portal for this package.`,
               [
                 {
                   text: 'OK',

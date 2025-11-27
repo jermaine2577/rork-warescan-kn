@@ -88,6 +88,15 @@ export default function NevisReleasingScreen() {
     
     if (!data || typeof data !== 'string') {
       console.error('Invalid barcode data type:', typeof data);
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      resetState();
       return;
     }
     
@@ -224,11 +233,13 @@ export default function NevisReleasingScreen() {
         }
       };
       
+      const destinationName = product.destination || 'Unknown';
+      
       setTimeout(() => {
         try {
           Alert.alert(
             'Wrong Portal',
-            'This package is not designated for Nevis. Please use the St. Kitts Releasing portal.',
+            `This package belongs to "${destinationName}", not Nevis.\n\nPlease use the correct releasing portal for this package.`,
             [
               {
                 text: 'OK',
@@ -298,15 +309,35 @@ export default function NevisReleasingScreen() {
     try {
       setShowScanner(false);
       setTimeout(() => {
-        setSelectedProduct(product.id);
-        setIsProcessing(false);
-        setScanned(false);
+        try {
+          setSelectedProduct(product.id);
+          setIsProcessing(false);
+          setScanned(false);
+        } catch (stateError) {
+          console.error('Error updating state (recovering):', stateError);
+          setScanned(false);
+          setIsProcessing(false);
+        }
       }, 400);
     } catch (error) {
       console.error('Error showing product confirmation:', error);
-      setScanned(false);
-      setIsProcessing(false);
-      Alert.alert('Error', 'An error occurred. Please try again.');
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      resetState();
+      
+      setTimeout(() => {
+        Alert.alert(
+          'Error',
+          'An error occurred while processing the scan. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }, 100);
     }
   }, [scanned, isProcessing, getProductByBarcode, scanMode]);
 
