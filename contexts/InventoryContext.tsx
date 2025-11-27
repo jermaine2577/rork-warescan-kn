@@ -185,8 +185,10 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
 
 async function saveProducts(products: Product[], userId: string | null): Promise<Product[]> {
   if (!userId) {
-    console.error('Cannot save products without user ID');
-    throw new Error('Cannot save products without user ID. Please ensure you are logged in.');
+    console.error('❌ Cannot save products without user ID');
+    console.error('userId provided:', userId);
+    console.error('Stack trace:', new Error().stack);
+    throw new Error('User session not loaded. Please wait a moment and try again, or log out and log back in.');
   }
   
   const currentUser = await getCurrentUser();
@@ -455,7 +457,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const addProduct = useCallback((input: ProductInput, username?: string) => {
     if (!currentUserId || !effectiveOwnerId) {
       console.error('Cannot add product: User not logged in');
-      throw new Error('Cannot add product: User not logged in. Please log in and try again.');
+      console.error('currentUserId:', currentUserId, 'effectiveOwnerId:', effectiveOwnerId);
+      throw new Error('User session not loaded. Please wait a moment and try again, or log out and log back in.');
     }
     
     const ownerId = getEffectiveOwnerId();
@@ -503,6 +506,11 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId, queryClient]);
 
   const updateProduct = useCallback((id: string, updates: Partial<ProductInput>) => {
+    if (!currentUserId || !effectiveOwnerId) {
+      console.error('Cannot update product: User not logged in');
+      console.error('currentUserId:', currentUserId, 'effectiveOwnerId:', effectiveOwnerId);
+      throw new Error('User session not loaded. Please wait a moment and try again, or log out and log back in.');
+    }
     const ownerId = getEffectiveOwnerId();
     const updatedProducts = products.map(p =>
       p.id === id && p.ownerId === ownerId
@@ -728,7 +736,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const bulkImportProducts = useCallback((newProducts: ProductInput[], username?: string) => {
     if (!currentUserId || !effectiveOwnerId) {
       console.error('Cannot bulk import: User not logged in');
-      throw new Error('Cannot import products: User not logged in. Please log in and try again.');
+      console.error('currentUserId:', currentUserId, 'effectiveOwnerId:', effectiveOwnerId);
+      throw new Error('User session not loaded. Please wait a moment and try again, or log out and log back in.');
     }
     
     const ownerId = getEffectiveOwnerId();
