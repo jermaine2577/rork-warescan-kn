@@ -681,28 +681,52 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
 
   const resetAllData = useCallback(async () => {
     const ownerId = getEffectiveOwnerId();
-    console.log('Resetting inventory for user', ownerId);
-    saveProductsMutate([], {
-      onSuccess: async () => {
-        try {
-          if (!ownerId) return;
-          
-          await initializeFirebase();
-          const db = getDb();
-          if (db) {
-            const productsCol = collection(db, 'users', ownerId, 'products');
-            const snapshot = await getDocs(productsCol);
-            const batch = writeBatch(db);
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            console.log('All products deleted from Firestore for user', ownerId);
-          }
-        } catch (error) {
-          console.error('Error deleting all products from Firestore:', error);
+    console.log('🔄 Starting complete data reset for user', ownerId);
+    
+    try {
+      console.log('1️⃣ Clearing local query cache...');
+      queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], []);
+      
+      console.log('2️⃣ Clearing AsyncStorage...');
+      const storageKey = getUserStorageKey(ownerId);
+      await AsyncStorage.removeItem(storageKey);
+      await AsyncStorage.setItem(storageKey, JSON.stringify([]));
+      console.log('✓ AsyncStorage cleared');
+      
+      console.log('3️⃣ Clearing Firestore...');
+      await initializeFirebase();
+      const db = getDb();
+      if (db) {
+        const productsCol = collection(db, 'users', ownerId, 'products');
+        const snapshot = await getDocs(productsCol);
+        
+        if (snapshot.docs.length > 0) {
+          console.log(`Found ${snapshot.docs.length} documents in Firestore. Deleting...`);
+          const batch = writeBatch(db);
+          snapshot.docs.forEach(doc => batch.delete(doc.ref));
+          await batch.commit();
+          console.log('✓ Firestore cleared');
+        } else {
+          console.log('✓ Firestore already empty');
         }
       }
-    });
-  }, [saveProductsMutate, getEffectiveOwnerId]);
+      
+      console.log('4️⃣ Final save to persist empty state...');
+      saveProductsMutate([], {
+        onSuccess: () => {
+          console.log('✅ Complete data reset successful!');
+          console.log('System is now ready for fresh Excel import');
+        },
+        onError: (error) => {
+          console.error('❌ Error in final save:', error);
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Critical error during data reset:', error);
+      throw error;
+    }
+  }, [saveProductsMutate, getEffectiveOwnerId, queryClient, effectiveOwnerId, currentUserId]);
 
   const updateDestinationsByBarcode = useCallback((updates: { barcode: string; destination: Destination }[]) => {
     const ownerId = getEffectiveOwnerId();
