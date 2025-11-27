@@ -59,7 +59,7 @@ export default function ReleaseScreen() {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const receivedProducts = useMemo(
-    () => products.filter((p) => p.status === 'received'),
+    () => products.filter((p) => p.status === 'received' && p.uploadStatus === 'validated'),
     [products]
   );
   

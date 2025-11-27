@@ -45,7 +45,7 @@ export default function NevisReleasingScreen() {
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const acceptedProducts = useMemo(
-    () => products.filter((p) => p.status === 'received' && p.destination === 'Nevis' && p.dateTransferred),
+    () => products.filter((p) => p.status === 'received' && p.destination === 'Nevis' && p.uploadStatus === 'validated' && p.dateTransferred),
     [products]
   );
   
