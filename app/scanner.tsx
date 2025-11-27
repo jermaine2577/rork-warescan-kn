@@ -15,10 +15,12 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInventory } from '@/contexts/InventoryContext';
 
 export default function ScannerScreen() {
   const router = useRouter();
-  const { hasPrivilege } = useAuth();
+  const { hasPrivilege, session } = useAuth();
+  const { verifyProductFromNevis } = useInventory();
 
   useEffect(() => {
     if (!hasPrivilege('scanner')) {
@@ -100,8 +102,79 @@ export default function ScannerScreen() {
       return;
     }
     
+    const trimmedBarcode = data.trim();
+    
     isNavigatingRef.current = true;
     setScanned(true);
+
+    const verificationResult = verifyProductFromNevis(trimmedBarcode, session?.username);
+    
+    if (verificationResult.success) {
+      await playSuccessFeedback();
+      
+      setTimeout(() => {
+        Alert.alert(
+          '✓ Product Verified',
+          `Package ${trimmedBarcode} has been verified and is back in the main warehouse.\n\nCustomer: ${verificationResult.product?.customerName || 'N/A'}\nStorage: ${verificationResult.product?.storageLocation || 'N/A'}`,
+          [
+            {
+              text: 'Scan Another',
+              onPress: () => {
+                setScanned(false);
+                isNavigatingRef.current = false;
+                if (scanMode === 'scanner') {
+                  setHardwareScannerInput('');
+                  setLastScannedBarcode('');
+                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+                }
+              },
+            },
+            {
+              text: 'Done',
+              style: 'cancel',
+              onPress: () => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)');
+                }
+              },
+            },
+          ]
+        );
+      }, 100);
+      return;
+    }
+    
+    if (verificationResult.error === 'invalid_status') {
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
+          console.log('Haptic error:', e)
+        );
+      }
+      
+      setTimeout(() => {
+        Alert.alert(
+          'Invalid Status',
+          `This package has status: ${verificationResult.currentStatus}. Only packages awaiting from Nevis can be verified here.\n\nPlease use the regular receiving process for new packages.`,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setScanned(false);
+                isNavigatingRef.current = false;
+                if (scanMode === 'scanner') {
+                  setHardwareScannerInput('');
+                  setLastScannedBarcode('');
+                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+                }
+              },
+            },
+          ]
+        );
+      }, 100);
+      return;
+    }
 
     await playSuccessFeedback();
 
@@ -113,7 +186,7 @@ export default function ScannerScreen() {
       });
       isNavigatingRef.current = false;
     }, 100);
-  }, [scanned, router, playSuccessFeedback]);
+  }, [scanned, router, playSuccessFeedback, verifyProductFromNevis, session, scanMode]);
 
   const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
     processBarcode(data, 'camera');

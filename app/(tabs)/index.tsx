@@ -341,6 +341,15 @@ export default function InventoryScreen() {
         </ScrollView>
       </View>
 
+      {awaitingFromNevisCount > 0 && (
+        <View style={styles.warningBanner}>
+          <AlertCircle size={20} color="#F59E0B" />
+          <Text style={styles.warningText}>
+            {awaitingFromNevisCount} package{awaitingFromNevisCount !== 1 ? 's' : ''} returned from Nevis. Scan to verify.
+          </Text>
+        </View>
+      )}
+
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Search size={20} color="#9CA3AF" style={styles.searchIcon} />
@@ -914,5 +923,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FFFBEB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: -4,
+    borderRadius: 8,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#92400E',
   },
 });
