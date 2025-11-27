@@ -113,35 +113,12 @@ export default function ScannerScreen() {
       await playSuccessFeedback();
       
       setTimeout(() => {
-        Alert.alert(
-          '✓ Product Verified',
-          `Package ${trimmedBarcode} has been verified and is back in the main warehouse.\n\nCustomer: ${verificationResult.product?.customerName || 'N/A'}\nStorage: ${verificationResult.product?.storageLocation || 'N/A'}`,
-          [
-            {
-              text: 'Scan Another',
-              onPress: () => {
-                setScanned(false);
-                isNavigatingRef.current = false;
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setLastScannedBarcode('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
-              },
-            },
-            {
-              text: 'Done',
-              style: 'cancel',
-              onPress: () => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace('/(tabs)');
-                }
-              },
-            },
-          ]
-        );
+        console.log('→ Navigating to product detail screen:', verificationResult.product?.id);
+        router.push({
+          pathname: '/product/[id]',
+          params: { id: verificationResult.product!.id },
+        });
+        isNavigatingRef.current = false;
       }, 100);
       return;
     }
