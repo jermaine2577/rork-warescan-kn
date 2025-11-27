@@ -16,7 +16,9 @@ function getUserStorageKey(userId: string): string {
 
 async function getCurrentUserId(): Promise<string | null> {
   try {
-    return await AsyncStorage.getItem(CURRENT_USER_KEY);
+    const userId = await AsyncStorage.getItem(CURRENT_USER_KEY);
+    console.log('Current user ID loaded:', userId);
+    return userId;
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
@@ -40,13 +42,14 @@ async function getCurrentUser(): Promise<User | null> {
 }
 
 function getEffectiveOwnerIdForUser(user: User | null): string {
-  if (!user) return 'unknown';
-  
-  if (user.role === 'sub-user' && user.managerId) {
-    return user.managerId;
+  if (!user) {
+    console.log('No user found, returning unknown owner ID');
+    return 'unknown';
   }
   
-  return user.id;
+  const effectiveId = user.role === 'sub-user' && user.managerId ? user.managerId : user.id;
+  console.log('Current user role:', user.role, 'Effective owner ID:', effectiveId);
+  return effectiveId;
 }
 
 async function loadProducts(userId: string | null): Promise<Product[]> {
@@ -347,7 +350,9 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   useEffect(() => {
     if (!currentUserId || !effectiveOwnerId) return;
 
-    console.log(`Setting up real-time listener for user ${effectiveOwnerId}`);
+    console.log(`✓ Setting up real-time Firestore listener for user ${effectiveOwnerId}`);
+    
+    let unsubscribe: (() => void) | undefined;
     
     const setupListener = async () => {
       try {
@@ -355,13 +360,13 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
         const db = getDb();
         
         if (!db) {
-          console.warn('DB not available, falling back to query');
+          console.warn('⚠️  DB not available for real-time sync');
           return;
         }
 
         const productsCol = collection(db, 'users', effectiveOwnerId, 'products');
         
-        const unsubscribe = onSnapshot(
+        unsubscribe = onSnapshot(
           productsCol,
           (snapshot) => {
             const products: Product[] = [];
@@ -388,8 +393,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
               } as Product);
             });
             
-            console.log(`🔄 Real-time update: ${products.length} products`);
-            queryClient.setQueryData(['products', currentUserId], products);
+            console.log(`🔄 Real-time Firestore sync: ${products.length} products received`);
+            queryClient.setQueryData(['products', effectiveOwnerId], products);
             
             const storageKey = getUserStorageKey(effectiveOwnerId);
             AsyncStorage.setItem(storageKey, JSON.stringify(products)).catch(err => 
@@ -397,29 +402,37 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
             );
           },
           (error) => {
-            console.error('❌ Firestore listener error:', error);
+            console.error('❌ Firestore real-time listener error:', error);
+            queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId] });
           }
         );
 
-        return unsubscribe;
+        console.log('✓ Real-time listener active for', effectiveOwnerId);
       } catch (error) {
-        console.error('Error setting up real-time listener:', error);
+        console.error('❌ Error setting up real-time listener:', error);
       }
     };
 
     setupListener();
+    
+    return () => {
+      if (unsubscribe) {
+        console.log('🔌 Disconnecting real-time listener for', effectiveOwnerId);
+        unsubscribe();
+      }
+    };
   }, [currentUserId, effectiveOwnerId, queryClient]);
 
   const productsQuery = useQuery({
-    queryKey: ['products', currentUserId],
+    queryKey: ['products', effectiveOwnerId, currentUserId],
     queryFn: () => loadProducts(currentUserId),
-    staleTime: Infinity,
+    staleTime: 5000,
     gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: false,
-    enabled: !!currentUserId,
+    enabled: !!currentUserId && !!effectiveOwnerId,
   });
 
   const products = useMemo(() => productsQuery.data || [], [productsQuery.data]);
