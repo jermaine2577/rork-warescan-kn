@@ -21,6 +21,7 @@ import {
   ActivityIndicator,
   Platform,
 } from 'react-native';
+import { webSafeAlert } from '@/utils/webCompatibility';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProductStatus, Destination } from '@/types/inventory';
 
@@ -103,7 +104,7 @@ export default function ProductDetailScreen() {
 
   const handleStorageLocationPress = () => {
     if (!canEditStorageLocation && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated')) {
-      Alert.alert(
+      webSafeAlert(
         'Access Denied',
         'You do not have permission to edit storage locations for uploaded products. Please contact your administrator.'
       );
@@ -114,7 +115,7 @@ export default function ProductDetailScreen() {
 
   const handleDestinationPress = () => {
     if (!canEditProductDetails && (product.uploadStatus === 'uploaded' || product.uploadStatus === 'validated')) {
-      Alert.alert(
+      webSafeAlert(
         'Access Denied', 
         'You do not have permission to edit product details for uploaded products. Please contact your administrator.'
       );
@@ -125,7 +126,7 @@ export default function ProductDetailScreen() {
 
   const handleBarcodePress = () => {
     if (!canEditProductDetails) {
-      Alert.alert(
+      webSafeAlert(
         'Access Denied',
         'You do not have permission to edit barcodes. Please contact your administrator.'
       );
@@ -140,13 +141,13 @@ export default function ProductDetailScreen() {
   const handleSave = () => {
     try {
       if (!barcode || !barcode.trim()) {
-        Alert.alert('Error', 'Barcode cannot be empty');
+        webSafeAlert('Error', 'Barcode cannot be empty');
         return;
       }
 
       const trimmedStorage = storageLocation?.trim() || '';
       if (!trimmedStorage) {
-        Alert.alert('Error', 'Storage location is required');
+        webSafeAlert('Error', 'Storage location is required');
         return;
       }
 
@@ -175,44 +176,54 @@ export default function ProductDetailScreen() {
         : 'Package updated successfully. Changes will sync across all devices.';
       
       setTimeout(() => {
-        Alert.alert('Success', message, [
-          { text: 'OK', onPress: () => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)');
-            }
-          }},
-        ]);
+        webSafeAlert('Success', message, () => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace('/(tabs)');
+          }
+        });
       }, 100);
     } catch (error) {
       console.error('Error saving product:', error);
       setTimeout(() => {
-        Alert.alert('Error', 'Failed to save changes. Please try again.');
+        webSafeAlert('Error', 'Failed to save changes. Please try again.');
       }, 100);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete Package',
-      'Are you sure you want to delete this package? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteProduct(params.id);
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)');
-            }
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Delete Package\n\nAre you sure you want to delete this package? This action cannot be undone.');
+      if (confirmed) {
+        deleteProduct(params.id);
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)');
+        }
+      }
+    } else {
+      Alert.alert(
+        'Delete Package',
+        'Are you sure you want to delete this package? This action cannot be undone.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              deleteProduct(params.id);
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   return (

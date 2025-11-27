@@ -17,6 +17,7 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
+import { webSafeAlert } from '@/utils/webCompatibility';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -188,10 +189,9 @@ export default function LoginScreen() {
 
   const handleForgotPassword = () => {
     if (loginType === 'employee') {
-      Alert.alert(
+      webSafeAlert(
         'Employee Password Reset',
-        'Employees must contact their administrator to reset their password. Admins can reset employee passwords from the Tools page.',
-        [{ text: 'OK' }]
+        'Employees must contact their administrator to reset their password. Admins can reset employee passwords from the Tools page.'
       );
     } else {
       setShowResetPassword(true);
@@ -207,63 +207,58 @@ export default function LoginScreen() {
   const handleResetPasswordSubmit = async () => {
     if (resetStep === 'username') {
       if (!resetUsername.trim()) {
-        Alert.alert('Error', 'Please enter your username');
+        webSafeAlert('Error', 'Please enter your username');
         return;
       }
       const user = getUserByUsername(resetUsername.trim());
       if (!user) {
-        Alert.alert('Error', 'Username not found');
+        webSafeAlert('Error', 'Username not found');
         return;
       }
       if (user.role !== 'manager') {
-        Alert.alert('Error', 'Password reset is only available for admin accounts. Employees must contact their administrator.');
+        webSafeAlert('Error', 'Password reset is only available for admin accounts. Employees must contact their administrator.');
         return;
       }
       setResetStep('questions');
     } else if (resetStep === 'questions') {
       if (!resetAnswer1.trim() || !resetAnswer2.trim()) {
-        Alert.alert('Error', 'Please answer both security questions');
+        webSafeAlert('Error', 'Please answer both security questions');
         return;
       }
       const user = getUserByUsername(resetUsername.trim());
       if (!user) {
-        Alert.alert('Error', 'User not found');
+        webSafeAlert('Error', 'User not found');
         return;
       }
       if (
         user.securityAnswer1?.toLowerCase().trim() !== resetAnswer1.toLowerCase().trim() ||
         user.securityAnswer2?.toLowerCase().trim() !== resetAnswer2.toLowerCase().trim()
       ) {
-        Alert.alert('Error', 'Security answers are incorrect');
+        webSafeAlert('Error', 'Security answers are incorrect');
         return;
       }
       setResetStep('newPassword');
     } else if (resetStep === 'newPassword') {
       if (!resetNewPassword.trim()) {
-        Alert.alert('Error', 'Please enter a new password');
+        webSafeAlert('Error', 'Please enter a new password');
         return;
       }
       if (resetNewPassword.length < 4) {
-        Alert.alert('Error', 'Password must be at least 4 characters');
+        webSafeAlert('Error', 'Password must be at least 4 characters');
         return;
       }
       if (resetNewPassword !== resetConfirmPassword) {
-        Alert.alert('Error', 'Passwords do not match');
+        webSafeAlert('Error', 'Passwords do not match');
         return;
       }
       try {
         await resetAdminPassword({ username: resetUsername.trim(), newPassword: resetNewPassword });
-        Alert.alert('Success', 'Your password has been reset successfully. Please log in with your new password.', [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowResetPassword(false);
-              setPassword('');
-            },
-          },
-        ]);
+        webSafeAlert('Success', 'Your password has been reset successfully. Please log in with your new password.', () => {
+          setShowResetPassword(false);
+          setPassword('');
+        });
       } catch (error) {
-        Alert.alert('Error', error instanceof Error ? error.message : 'Failed to reset password');
+        webSafeAlert('Error', error instanceof Error ? error.message : 'Failed to reset password');
       }
     }
   };
