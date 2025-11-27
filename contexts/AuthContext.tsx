@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { getDb, initializeFirebase } from '@/config/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 const STORAGE_KEY = '@inventory_users';
 const SESSION_KEY = '@inventory_session';
@@ -410,10 +410,81 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     queryFn: loadUsers,
     staleTime: Infinity,
     gcTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
+
+  useEffect(() => {
+    console.log('✓ Setting up real-time Firestore listener for users');
+    
+    let unsubscribe: (() => void) | undefined;
+    
+    const setupListener = async () => {
+      try {
+        await initializeFirebase();
+        const db = getDb();
+        
+        if (!db) {
+          console.warn('⚠️  DB not available for real-time user sync');
+          return;
+        }
+
+        const usersCol = collection(db, 'users');
+        
+        unsubscribe = onSnapshot(
+          usersCol,
+          (snapshot) => {
+            const users: User[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              users.push({
+                id: docSnap.id,
+                username: data.username || '',
+                password: data.password || '',
+                securityQuestion: data.securityQuestion || '',
+                securityAnswer: data.securityAnswer || '',
+                securityQuestion1: data.securityQuestion1,
+                securityAnswer1: data.securityAnswer1,
+                securityQuestion2: data.securityQuestion2,
+                securityAnswer2: data.securityAnswer2,
+                createdAt: data.createdAt || new Date().toISOString(),
+                role: data.role || 'manager',
+                managerId: data.managerId,
+                privileges: data.privileges,
+                uniqueKey: data.uniqueKey,
+                isActive: data.isActive !== false,
+              });
+            });
+            
+            console.log(`🔄 Real-time Firestore sync: ${users.length} users received`);
+            queryClient.setQueryData(['users'], users);
+            
+            AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(users)).catch(err => 
+              console.error('Failed to cache users:', err)
+            );
+          },
+          (error) => {
+            console.error('❌ Firestore real-time listener error for users:', error);
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+          }
+        );
+
+        console.log('✓ Real-time listener active for users');
+      } catch (error) {
+        console.error('❌ Error setting up real-time listener for users:', error);
+      }
+    };
+
+    setupListener();
+    
+    return () => {
+      if (unsubscribe) {
+        console.log('🔌 Disconnecting real-time listener for users');
+        unsubscribe();
+      }
+    };
+  }, [queryClient]);
 
   const sessionQuery = useQuery({
     queryKey: ['session'],
