@@ -676,6 +676,7 @@ const styles = StyleSheet.create({
     fontWeight: '700' as const,
     color: '#111827',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
