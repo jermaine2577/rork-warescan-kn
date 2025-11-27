@@ -270,15 +270,25 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
 
   useEffect(() => {
     const loadUserId = async () => {
-      const userId = await getCurrentUserId();
-      
-      if (userId) {
-        const currentUser = await getCurrentUser();
-        const effectiveId = getEffectiveOwnerIdForUser(currentUser);
+      try {
+        const userId = await getCurrentUserId();
+        console.log('Current user ID loaded:', userId);
         
-        setCurrentUserId(userId);
-        setEffectiveOwnerId(effectiveId);
-      } else {
+        if (userId) {
+          const currentUser = await getCurrentUser();
+          const effectiveId = getEffectiveOwnerIdForUser(currentUser);
+          
+          console.log('Current user role:', currentUser?.role, 'Effective owner ID:', effectiveId);
+          
+          setCurrentUserId(userId);
+          setEffectiveOwnerId(effectiveId);
+        } else {
+          console.warn('No user ID found in storage');
+          setCurrentUserId(null);
+          setEffectiveOwnerId(null);
+        }
+      } catch (error) {
+        console.error('Error loading user ID:', error);
         setCurrentUserId(null);
         setEffectiveOwnerId(null);
       }
