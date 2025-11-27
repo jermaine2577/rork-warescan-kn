@@ -61,6 +61,51 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
     
     console.log(`Loading products for user ${userId}, effective owner: ${effectiveOwnerId}`);
     
+    try {
+      console.log('Loading products from Firestore...');
+      await initializeFirebase();
+      const db = getDb();
+      
+      if (db) {
+        const productsCol = collection(db, 'users', effectiveOwnerId, 'products');
+        const snapshot = await getDocs(productsCol);
+        
+        const products: Product[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          products.push({
+            id: docSnap.id,
+            ownerId: data.ownerId || effectiveOwnerId,
+            barcode: data.barcode || '',
+            customerName: data.customerName,
+            storageLocation: data.storageLocation,
+            destination: data.destination || 'Saint Kitts',
+            status: data.status || 'received',
+            uploadStatus: data.uploadStatus,
+            dateAdded: data.dateAdded || new Date().toISOString(),
+            dateUpdated: data.dateUpdated || new Date().toISOString(),
+            dateReleased: data.dateReleased,
+            dateTransferred: data.dateTransferred,
+            receivedBy: data.receivedBy,
+            releasedBy: data.releasedBy,
+            transferredBy: data.transferredBy,
+            price: data.price,
+            notes: data.notes,
+          } as Product);
+        });
+        
+        console.log(`✓ Loaded ${products.length} products from Firestore`);
+        
+        const storageKey = getUserStorageKey(effectiveOwnerId);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(products));
+        
+        return products;
+      }
+    } catch (firestoreError) {
+      console.error('❌ Error loading products from Firestore:', firestoreError);
+    }
+    
+    console.log('Falling back to AsyncStorage...');
     const storageKey = getUserStorageKey(effectiveOwnerId);
     let stored = await AsyncStorage.getItem(storageKey);
     
@@ -107,7 +152,7 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
       }
       
       const userProducts = parsed.filter((p: Product) => p.ownerId === effectiveOwnerId);
-      console.log(`✓ Loaded ${userProducts.length} products from storage for effective owner ${effectiveOwnerId}`);
+      console.log(`✓ Loaded ${userProducts.length} products from AsyncStorage cache`);
       return userProducts;
     } catch (parseError) {
       console.error('❌ JSON Parse error in products:', parseError);
