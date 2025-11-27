@@ -50,15 +50,22 @@ export default function NevisReceivingScreen() {
     const searchLower = searchQuery.toLowerCase();
     return products.filter((p) => {
       if (p.destination !== 'Nevis') return false;
-      if (p.status !== 'transferred' && p.status !== 'received') return false;
       
-      const matchesSearch =
-        searchQuery === '' ||
-        p.barcode.toLowerCase().includes(searchLower) ||
-        (p.customerName && p.customerName.toLowerCase().includes(searchLower)) ||
-        (p.storageLocation && p.storageLocation.toLowerCase().includes(searchLower));
+      if (p.status === 'transferred') {
+        return searchQuery === '' ||
+          p.barcode.toLowerCase().includes(searchLower) ||
+          (p.customerName && p.customerName.toLowerCase().includes(searchLower)) ||
+          (p.storageLocation && p.storageLocation.toLowerCase().includes(searchLower));
+      }
       
-      return matchesSearch;
+      if (p.status === 'received' && p.dateTransferred) {
+        return searchQuery === '' ||
+          p.barcode.toLowerCase().includes(searchLower) ||
+          (p.customerName && p.customerName.toLowerCase().includes(searchLower)) ||
+          (p.storageLocation && p.storageLocation.toLowerCase().includes(searchLower));
+      }
+      
+      return false;
     });
   }, [products, searchQuery]);
 
@@ -316,7 +323,7 @@ export default function NevisReceivingScreen() {
           </View>
           <View style={[styles.statCard, { flex: 1 }]}>
             <Text style={[styles.statValue, { color: '#10B981' }]}>
-              {nevisProducts.filter(p => p.status === 'received').length}
+              {nevisProducts.filter(p => p.status === 'received' && p.dateTransferred).length}
             </Text>
             <Text style={styles.statLabel}>Accepted</Text>
           </View>
