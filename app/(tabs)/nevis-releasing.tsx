@@ -227,6 +227,34 @@ export default function NevisReleasingScreen() {
       return;
     }
 
+    if (!product.dateTransferred) {
+      setShowScanner(false);
+      
+      const resetState = () => {
+        setScanned(false);
+        setIsProcessing(false);
+        if (scanMode === 'scanner') {
+          setHardwareScannerInput('');
+          setLastScannedBarcode('');
+        }
+      };
+      
+      setTimeout(() => {
+        try {
+          Alert.alert(
+            'Not Transferred to Nevis',
+            'This package was never released from St Kitts to Nevis. It must go through the St Kitts Release Portal first.\n\nWorkflow: St Kitts Release → Nevis Receive → Nevis Release',
+            [{ text: 'OK', onPress: resetState }],
+            { cancelable: false }
+          );
+        } catch (alertError) {
+          console.error('Could not show alert (non-critical):', alertError);
+          resetState();
+        }
+      }, 400);
+      return;
+    }
+
     if (product.status !== 'received') {
       setShowScanner(false);
       
@@ -244,10 +272,13 @@ export default function NevisReleasingScreen() {
       
       if (product.status === 'transferred') {
         errorTitle = 'Not Yet Accepted';
-        errorMessage = 'This package has been transferred to Nevis but not yet accepted. Please go to Nevis Receiving portal to accept it first.';
-      } else if (!product.dateTransferred || product.status === 'awaiting_from_nevis') {
-        errorTitle = 'Not in Nevis';
-        errorMessage = 'This package must go through the Nevis Receiving portal first before it can be released.';
+        errorMessage = 'This package has been transferred to Nevis but not yet accepted. Please go to Nevis Receiving portal to accept it first.\n\nWorkflow: St Kitts Release → Nevis Receive → Nevis Release';
+      } else if (product.status === 'awaiting_from_nevis') {
+        errorTitle = 'Invalid Status';
+        errorMessage = 'This package has an invalid status. Please contact administrator.';
+      } else if (product.status === 'released') {
+        errorTitle = 'Already Released';
+        errorMessage = 'This package has already been released from Nevis.';
       }
       
       setTimeout(() => {

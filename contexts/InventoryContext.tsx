@@ -387,6 +387,23 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const releaseProduct = useCallback((id: string, username?: string) => {
     try {
       const ownerId = getEffectiveOwnerId();
+      const product = products.find(p => p.id === id && p.ownerId === ownerId);
+      
+      if (!product) {
+        console.error('Product not found:', id);
+        throw new Error('Product not found');
+      }
+      
+      if (product.uploadStatus !== 'validated') {
+        console.error('Cannot release non-validated product:', id);
+        throw new Error('Product must be validated before release');
+      }
+      
+      if (product.status !== 'received') {
+        console.error('Cannot release product with status:', product.status);
+        throw new Error('Only received products can be released. Current status: ' + product.status);
+      }
+      
       const updatedProducts = products.map(p =>
         p.id === id && p.ownerId === ownerId
           ? {
@@ -411,11 +428,34 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       });
     } catch (error) {
       console.error('Critical error in releaseProduct:', error);
+      throw error;
     }
   }, [products, saveProductsMutate, getEffectiveOwnerId]);
 
   const transferProduct = useCallback((id: string, username?: string) => {
     const ownerId = getEffectiveOwnerId();
+    const product = products.find(p => p.id === id && p.ownerId === ownerId);
+    
+    if (!product) {
+      console.error('Product not found:', id);
+      throw new Error('Product not found');
+    }
+    
+    if (product.uploadStatus !== 'validated') {
+      console.error('Cannot transfer non-validated product:', id);
+      throw new Error('Product must be validated before transfer');
+    }
+    
+    if (product.status !== 'received') {
+      console.error('Cannot transfer product with status:', product.status);
+      throw new Error('Only received products can be transferred. Current status: ' + product.status);
+    }
+    
+    if (product.destination !== 'Nevis') {
+      console.error('Cannot transfer non-Nevis product:', product.destination);
+      throw new Error('Only products destined for Nevis can be transferred');
+    }
+    
     const updatedProducts = products.map(p =>
       p.id === id && p.ownerId === ownerId
         ? {

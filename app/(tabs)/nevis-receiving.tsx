@@ -93,7 +93,35 @@ export default function NevisReceivingScreen() {
       setTimeout(() => {
         Alert.alert(
           'Cannot Receive',
-          'This package must be validated in the main receiving portal before it can be accepted in Nevis. Please validate it first.',
+          'This package must be validated in the main receiving portal before it can be accepted in Nevis.\n\nWorkflow: Upload → Validate → St Kitts Release → Nevis Receive',
+          [{ text: 'OK' }],
+          { cancelable: false }
+        );
+      }, 100);
+      return;
+    }
+
+    if (!receivingProduct.dateTransferred) {
+      setShowReceivingModal(false);
+      setReceivingProduct(null);
+      setTimeout(() => {
+        Alert.alert(
+          'Cannot Receive',
+          'This package was never released from St Kitts. It must be released through the St Kitts Release Portal first.\n\nWorkflow: Upload → Validate → St Kitts Release → Nevis Receive',
+          [{ text: 'OK' }],
+          { cancelable: false }
+        );
+      }, 100);
+      return;
+    }
+    
+    if (receivingProduct.status !== 'transferred') {
+      setShowReceivingModal(false);
+      setReceivingProduct(null);
+      setTimeout(() => {
+        Alert.alert(
+          'Cannot Receive',
+          'Only transferred packages can be received. This package has status: ' + receivingProduct.status + '\n\nWorkflow: Upload → Validate → St Kitts Release → Nevis Receive',
           [{ text: 'OK' }],
           { cancelable: false }
         );

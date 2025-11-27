@@ -202,7 +202,36 @@ export default function ReleaseScreen() {
       setTimeout(() => {
         Alert.alert(
           'Not Validated',
-          'This package must be validated before it can be released. Please validate it first in the receiving portal.',
+          'This package must be validated before it can be released. Please validate it first in the receiving portal.\n\nWorkflow: Upload → Validate → Release',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setScanned(false);
+                setIsProcessing(false);
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      }, 400);
+      return;
+    }
+
+    if (product.status !== 'received') {
+      setShowScanner(false);
+      setTimeout(() => {
+        let message = 'This package is not in a receivable state and cannot be released.';
+        if (product.status === 'released') {
+          message = 'This package has already been released.';
+        } else if (product.status === 'transferred') {
+          message = 'This package has already been transferred to Nevis.';
+        } else if (product.status === 'awaiting_from_nevis') {
+          message = 'This package is awaiting return from Nevis and cannot be released until it returns.';
+        }
+        Alert.alert(
+          'Cannot Release',
+          message,
           [
             {
               text: 'OK',
@@ -312,7 +341,18 @@ export default function ReleaseScreen() {
         setTimeout(() => {
           Alert.alert(
             'Cannot Transfer',
-            'This package must be validated in the receiving portal before it can be transferred to Nevis.',
+            'This package must be validated in the receiving portal before it can be transferred to Nevis.\n\nWorkflow: Upload → Validate → Transfer to Nevis',
+            [{ text: 'OK' }],
+            { cancelable: false }
+          );
+        }, 100);
+        return;
+      }
+      if (productToAction.status !== 'received') {
+        setTimeout(() => {
+          Alert.alert(
+            'Cannot Transfer',
+            'Only received packages can be transferred to Nevis. This package has status: ' + productToAction.status,
             [{ text: 'OK' }],
             { cancelable: false }
           );
@@ -326,6 +366,28 @@ export default function ReleaseScreen() {
         Alert.alert('Success', 'Package transferred to Nevis successfully');
       }, 100);
     } else {
+      if (productToAction.uploadStatus !== 'validated') {
+        setTimeout(() => {
+          Alert.alert(
+            'Cannot Release',
+            'This package must be validated before release.\n\nWorkflow: Upload → Validate → Release',
+            [{ text: 'OK' }],
+            { cancelable: false }
+          );
+        }, 100);
+        return;
+      }
+      if (productToAction.status !== 'received') {
+        setTimeout(() => {
+          Alert.alert(
+            'Cannot Release',
+            'Only received packages can be released. This package has status: ' + productToAction.status,
+            [{ text: 'OK' }],
+            { cancelable: false }
+          );
+        }, 100);
+        return;
+      }
       releaseProduct(selectedProduct, session?.username);
       await playSuccessFeedback();
 
