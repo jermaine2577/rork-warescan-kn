@@ -279,13 +279,13 @@ export default function NevisReleasingScreen() {
       let errorMessage = 'This package has not been accepted in Nevis yet. Only accepted packages can be released.';
       let errorTitle = 'Not Accepted';
       
-      if (product.status === 'transferred') {
+      if (product.status === 'transferred to Nevis') {
         errorTitle = 'Not Yet Accepted';
         errorMessage = 'This package has been transferred to Nevis but not yet accepted. Please go to Nevis Receiving portal to accept it first.\n\nWorkflow: St Kitts Release → Nevis Receive → Nevis Release';
       } else if (product.status === 'awaiting_from_nevis') {
         errorTitle = 'Invalid Status';
         errorMessage = 'This package has an invalid status. Please contact administrator.';
-      } else if (product.status === 'released') {
+      } else if (product.status === 'released' || product.status === 'transferred to Nevis') {
         errorTitle = 'Already Released';
         errorMessage = 'This package has already been released from Nevis.';
       }

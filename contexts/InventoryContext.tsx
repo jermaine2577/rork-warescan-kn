@@ -616,7 +616,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       p.id === id && p.ownerId === ownerId
         ? {
             ...p,
-            status: 'transferred' as const,
+            status: 'transferred to Nevis' as const,
             dateTransferred: new Date().toISOString(),
             dateUpdated: new Date().toISOString(),
             transferredBy: username,
@@ -896,7 +896,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       total: products.length,
       received: products.filter(p => p.status === 'received').length,
       released: products.filter(p => p.status === 'released').length,
-      transferred: products.filter(p => p.status === 'transferred').length,
+      transferred: products.filter(p => p.status === 'transferred to Nevis').length,
       saintKitts: products.filter(p => p.destination === 'Saint Kitts').length,
       nevis: products.filter(p => p.destination === 'Nevis').length,
     };

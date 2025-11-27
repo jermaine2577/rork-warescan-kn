@@ -252,7 +252,7 @@ export default function NevisScannerScreen() {
         return;
       }
       
-      if (product.status !== 'transferred') {
+      if (product.status !== 'transferred to Nevis') {
         console.log('Product status invalid for Nevis receiving:', product.status);
         
         if (Platform.OS !== 'web') {

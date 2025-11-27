@@ -1,4 +1,4 @@
-export type ProductStatus = 'received' | 'released' | 'transferred' | 'awaiting_from_nevis';
+export type ProductStatus = 'received' | 'released' | 'transferred to Nevis' | 'awaiting_from_nevis';
 export type UploadStatus = 'uploaded' | 'validated' | null;
 export type Destination = 'Saint Kitts' | 'Nevis';
 

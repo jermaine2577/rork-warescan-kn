@@ -64,7 +64,7 @@ export default function ReleaseScreen() {
   );
   
   const releasedProducts = useMemo(() => {
-    let released = products.filter((p) => p.status === 'released' || (p.status === 'transferred' && p.destination === 'Nevis'));
+    let released = products.filter((p) => p.status === 'released' || (p.status === 'transferred to Nevis' && p.destination === 'Nevis'));
     
     if (destinationFilter) {
       released = released.filter((p) => p.destination === destinationFilter);
@@ -224,7 +224,7 @@ export default function ReleaseScreen() {
         let message = 'This package is not in a receivable state and cannot be released.';
         if (product.status === 'released') {
           message = 'This package has already been released.';
-        } else if (product.status === 'transferred') {
+        } else if (product.status === 'transferred to Nevis') {
           message = 'This package has already been transferred to Nevis.';
         } else if (product.status === 'awaiting_from_nevis') {
           message = 'This package is awaiting return from Nevis and cannot be released until it returns.';
@@ -645,7 +645,7 @@ export default function ReleaseScreen() {
             <ScrollView style={styles.recentList} nestedScrollEnabled>
               {releasedProducts.slice(0, 100).map((item) => (
                 <View key={item.id} style={styles.recentItem}>
-                  <CheckCircle size={20} color={item.status === 'transferred' ? '#6366F1' : '#10B981'} />
+                  <CheckCircle size={20} color={item.status === 'transferred to Nevis' ? '#6366F1' : '#10B981'} />
                   <View style={styles.recentInfo}>
                     <Text style={styles.recentBarcode}>{item.barcode}</Text>
                     <Text style={styles.recentDate}>
@@ -654,7 +654,7 @@ export default function ReleaseScreen() {
                   </View>
                   <View style={styles.recentDestination}>
                     <Text style={styles.recentDestinationText}>{item.destination}</Text>
-                    {item.status === 'transferred' && (
+                    {item.status === 'transferred to Nevis' && (
                       <View style={styles.transferredBadge}>
                         <Text style={styles.transferredBadgeText}>Transferred</Text>
                       </View>

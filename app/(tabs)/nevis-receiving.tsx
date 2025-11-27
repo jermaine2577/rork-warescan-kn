@@ -51,7 +51,7 @@ export default function NevisReceivingScreen() {
     return products.filter((p) => {
       if (p.destination !== 'Nevis') return false;
       
-      if (p.status === 'transferred') {
+      if (p.status === 'transferred to Nevis') {
         return searchQuery === '' ||
           p.barcode.toLowerCase().includes(searchLower) ||
           (p.customerName && p.customerName.toLowerCase().includes(searchLower)) ||
@@ -122,7 +122,7 @@ export default function NevisReceivingScreen() {
       return;
     }
     
-    if (receivingProduct.status !== 'transferred') {
+    if (receivingProduct.status !== 'transferred to Nevis') {
       setShowReceivingModal(false);
       setReceivingProduct(null);
       setTimeout(() => {
@@ -181,7 +181,7 @@ export default function NevisReceivingScreen() {
           </View>
         </View>
         <View style={styles.badgeContainer}>
-          {item.status === 'transferred' ? (
+          {item.status === 'transferred to Nevis' ? (
             <>
               <View
                 style={[
@@ -317,7 +317,7 @@ export default function NevisReceivingScreen() {
         <View style={styles.statsRow}>
           <View style={[styles.statCard, { flex: 1 }]}>
             <Text style={[styles.statValue, { color: '#6366F1' }]}>
-              {nevisProducts.filter(p => p.status === 'transferred').length}
+              {nevisProducts.filter(p => p.status === 'transferred to Nevis').length}
             </Text>
             <Text style={styles.statLabel}>Transferred</Text>
           </View>
