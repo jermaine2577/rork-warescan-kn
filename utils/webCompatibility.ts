@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 
 export const isWeb = Platform.OS === 'web';
 export const isNative = Platform.OS !== 'web';
@@ -12,7 +12,6 @@ export function webSafeAlert(title: string, message: string, onPress?: () => voi
       onPress();
     }
   } else {
-    const { Alert } = require('react-native');
     Alert.alert(title, message, onPress ? [{ text: 'OK', onPress }] : undefined);
   }
 }
