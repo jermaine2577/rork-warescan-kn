@@ -114,10 +114,14 @@ export default function ScannerScreen() {
       
       setTimeout(() => {
         console.log('→ Navigating to product detail screen:', verificationResult.product?.id);
-        router.push({
-          pathname: '/product/[id]',
-          params: { id: verificationResult.product!.id },
-        });
+        if (Platform.OS === 'web') {
+          router.replace(`/product/${verificationResult.product!.id}` as any);
+        } else {
+          router.push({
+            pathname: '/product/[id]',
+            params: { id: verificationResult.product!.id },
+          });
+        }
         isNavigatingRef.current = false;
       }, 100);
       return;
@@ -157,10 +161,14 @@ export default function ScannerScreen() {
 
     setTimeout(() => {
       console.log('→ Navigating to add-product with barcode:', data);
-      router.push({
-        pathname: '/add-product',
-        params: { barcode: data },
-      });
+      if (Platform.OS === 'web') {
+        router.replace(`/add-product?barcode=${encodeURIComponent(data)}` as any);
+      } else {
+        router.push({
+          pathname: '/add-product',
+          params: { barcode: data },
+        });
+      }
       isNavigatingRef.current = false;
     }, 100);
   }, [scanned, router, playSuccessFeedback, verifyProductFromNevis, session, scanMode]);

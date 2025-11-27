@@ -121,7 +121,13 @@ export default function InventoryScreen() {
     <TouchableOpacity
       key={item.id}
       style={styles.productCard}
-      onPress={() => router.push(`/product/${item.id}`)}
+      onPress={() => {
+        if (Platform.OS === 'web') {
+          router.replace(`/product/${item.id}` as any);
+        } else {
+          router.push(`/product/${item.id}` as any);
+        }
+      }}
     >
       <View style={styles.productHeader}>
         <View style={styles.productInfo}>
@@ -510,7 +516,13 @@ export default function InventoryScreen() {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => router.push('/scanner')}
+        onPress={() => {
+          if (Platform.OS === 'web') {
+            router.replace('/scanner' as any);
+          } else {
+            router.push('/scanner' as any);
+          }
+        }}
       >
         <ScanBarcode size={28} color="#FFFFFF" />
       </TouchableOpacity>

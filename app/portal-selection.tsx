@@ -74,7 +74,12 @@ export default function PortalSelectionScreen() {
   );
 
   const handlePortalPress = (route: string) => {
-    router.push(route as any);
+    console.log('Navigating to portal:', route);
+    if (Platform.OS === 'web') {
+      router.replace(route as any);
+    } else {
+      router.push(route as any);
+    }
   };
 
   const handleLogout = async () => {
@@ -90,7 +95,12 @@ export default function PortalSelectionScreen() {
   };
 
   const handleToolsPress = () => {
-    router.push('/(tabs)/tools');
+    console.log('Navigating to tools');
+    if (Platform.OS === 'web') {
+      router.replace('/(tabs)/tools');
+    } else {
+      router.push('/(tabs)/tools');
+    }
   };
 
   const columnCount = isTablet ? 3 : 2;
