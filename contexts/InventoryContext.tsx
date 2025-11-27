@@ -505,11 +505,16 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
         : p
     );
     const updatedProduct = updatedProducts.find(p => p.id === id);
+    console.log('✓ Updating product:', id, 'with updates:', updates);
     saveProductsMutate(updatedProducts, {
       onSuccess: () => {
         if (updatedProduct) {
+          console.log('✓ Syncing updated product to Firestore:', updatedProduct.id);
           syncSingleProductToFirestore(updatedProduct, ownerId);
         }
+      },
+      onError: (error) => {
+        console.error('❌ Failed to update product:', error);
       }
     });
   }, [products, saveProductsMutate, getEffectiveOwnerId]);

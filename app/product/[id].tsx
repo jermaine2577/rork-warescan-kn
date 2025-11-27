@@ -149,29 +149,36 @@ export default function ProductDetailScreen() {
         return;
       }
 
-      updateProduct(params.id, {
-      barcode: barcode.trim(),
-      status,
-      storageLocation: storageLocation.trim(),
-      destination,
-      notes: notes.trim() || undefined,
-      customerName: customerName.trim() || undefined,
-      price: price.trim() || undefined,
-      comment: comment.trim() || undefined,
-    });
+      const updates = {
+        barcode: barcode.trim(),
+        status,
+        storageLocation: storageLocation.trim(),
+        destination,
+        notes: notes.trim() || undefined,
+        customerName: customerName.trim() || undefined,
+        price: price.trim() || undefined,
+        comment: comment.trim() || undefined,
+      };
+      
+      console.log('Saving product with updates:', updates);
+      updateProduct(params.id, updates);
 
-      Alert.alert('Success', 'Package updated successfully', [
-        { text: 'OK', onPress: () => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace('/(tabs)');
-          }
-        }},
-      ]);
+      setTimeout(() => {
+        Alert.alert('Success', 'Package updated successfully. Changes will sync across all devices.', [
+          { text: 'OK', onPress: () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }},
+        ]);
+      }, 100);
     } catch (error) {
       console.error('Error saving product:', error);
-      Alert.alert('Error', 'Failed to save changes. Please try again.');
+      setTimeout(() => {
+        Alert.alert('Error', 'Failed to save changes. Please try again.');
+      }, 100);
     }
   };
 
