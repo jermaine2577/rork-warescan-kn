@@ -272,18 +272,14 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     const loadUserId = async () => {
       try {
         const userId = await getCurrentUserId();
-        console.log('Current user ID loaded:', userId);
         
         if (userId) {
           const currentUser = await getCurrentUser();
           const effectiveId = getEffectiveOwnerIdForUser(currentUser);
           
-          console.log('Current user role:', currentUser?.role, 'Effective owner ID:', effectiveId);
-          
           setCurrentUserId(userId);
           setEffectiveOwnerId(effectiveId);
         } else {
-          console.warn('No user ID found in storage');
           setCurrentUserId(null);
           setEffectiveOwnerId(null);
         }
@@ -293,7 +289,14 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
         setEffectiveOwnerId(null);
       }
     };
+    
     loadUserId();
+    
+    const intervalId = setInterval(() => {
+      loadUserId();
+    }, 1000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   const productsQuery = useQuery({
@@ -324,12 +327,12 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   }, [effectiveOwnerId, currentUserId]);
 
   const addProduct = useCallback((input: ProductInput, username?: string) => {
-    const ownerId = getEffectiveOwnerId();
-    
-    if (!currentUserId) {
+    if (!currentUserId || !effectiveOwnerId) {
       console.error('Cannot add product: User not logged in');
-      throw new Error('Cannot add product: User not logged in');
+      throw new Error('Cannot add product: User not logged in. Please log in and try again.');
     }
+    
+    const ownerId = getEffectiveOwnerId();
     
     const trimmedBarcode = input.barcode.trim();
     
@@ -368,7 +371,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     });
     
     return true;
-  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId]);
 
   const updateProduct = useCallback((id: string, updates: Partial<ProductInput>) => {
     const ownerId = getEffectiveOwnerId();
@@ -581,6 +584,11 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   }, [products, getEffectiveOwnerId]);
 
   const bulkImportProducts = useCallback((newProducts: ProductInput[], username?: string) => {
+    if (!currentUserId || !effectiveOwnerId) {
+      console.error('Cannot bulk import: User not logged in');
+      throw new Error('Cannot import products: User not logged in. Please log in and try again.');
+    }
+    
     const ownerId = getEffectiveOwnerId();
     const timestamp = Date.now();
     const productsToAdd: Product[] = [];
@@ -646,7 +654,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       invalid: invalid.length,
       isDuplicateUpload: false
     };
-  }, [products, saveProductsMutate, getEffectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId]);
 
   const markAsValidated = useCallback((barcode: string, storageLocation?: string, destination?: Destination, notes?: string) => {
     const ownerId = getEffectiveOwnerId();
