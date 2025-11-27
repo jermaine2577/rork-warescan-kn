@@ -4,12 +4,12 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY_HERE",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyDz_mmzNgKDxh6TvGRkXvk0bJLyVmKWdGg",
+  authDomain: "warescan-kn.firebaseapp.com",
+  projectId: "warescan-kn",
+  storageBucket: "warescan-kn.firebasestorage.app",
+  messagingSenderId: "934012374567",
+  appId: "1:934012374567:ios:a9e8a2f01fa76506fb8802",
   iosBundleId: "app.rork.mrk54opr365nuifvcfrsm-9xo1ldcc"
 };
 
