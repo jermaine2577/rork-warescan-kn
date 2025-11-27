@@ -190,7 +190,7 @@ export default function NevisReceivingScreen() {
                 ]}
               >
                 <CheckCircle size={14} color="#FFFFFF" style={styles.badgeIcon} />
-                <Text style={styles.statusText}>Transferred</Text>
+                <Text style={styles.statusText}>Transferred from St Kitts</Text>
               </View>
               <TouchableOpacity
                 style={styles.receiveButton}
