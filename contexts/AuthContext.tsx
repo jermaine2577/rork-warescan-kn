@@ -488,15 +488,23 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const sessionQuery = useQuery({
     queryKey: ['session'],
-    queryFn: loadSession,
+    queryFn: async () => {
+      console.log('🔐 Loading session from storage...');
+      const session = await loadSession();
+      if (session) {
+        console.log('✓ Session restored for user:', session.username);
+      } else {
+        console.log('⚠️  No session found');
+      }
+      return session;
+    },
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    retry: 3,
-    retryDelay: 1000,
+    retry: 0,
   });
 
   const users = useMemo(() => usersQuery.data || [], [usersQuery.data]);
@@ -701,8 +709,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const isAuthenticated = useMemo(() => !!session, [session]);
   
   const isInitialLoading = useMemo(
-    () => usersQuery.isLoading || sessionQuery.isLoading,
-    [usersQuery.isLoading, sessionQuery.isLoading]
+    () => usersQuery.isLoading || sessionQuery.isLoading || sessionQuery.isFetching,
+    [usersQuery.isLoading, sessionQuery.isLoading, sessionQuery.isFetching]
   );
   
   const getUserByUsername = useCallback(

@@ -21,9 +21,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const navigationTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAuthStateRef = React.useRef(isAuthenticated);
   const isNavigatingRef = React.useRef(false);
+  const [isReady, setIsReady] = React.useState(false);
 
   useEffect(() => {
-    if (isLoading) {
+    if (!isLoading && !isReady) {
+      console.log('✓ Auth state loaded, app ready');
+      setIsReady(true);
+    }
+  }, [isLoading, isReady]);
+
+  useEffect(() => {
+    if (isLoading || !isReady) {
       return;
     }
 
@@ -37,7 +45,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     lastAuthStateRef.current = isAuthenticated;
 
     if (!isAuthenticated && !inAuthGroup) {
-      console.log('User not authenticated, redirecting to login');
+      console.log('🚪 User not authenticated, redirecting to login');
       if (!isNavigatingRef.current) {
         isNavigatingRef.current = true;
         navigationTimeoutRef.current = setTimeout(() => {
@@ -46,7 +54,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         }, 100);
       }
     } else if (isAuthenticated && inAuthGroup && authStateChanged) {
-      console.log('User just authenticated, redirecting to portal selection');
+      console.log('✅ User authenticated, redirecting to portal selection');
       if (!isNavigatingRef.current) {
         isNavigatingRef.current = true;
         navigationTimeoutRef.current = setTimeout(() => {
@@ -64,9 +72,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         navigationTimeoutRef.current = null;
       }
     };
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, isReady, segments, router]);
 
-  if (isLoading) {
+  if (isLoading || !isReady) {
     return (
       <View style={styles.splashContainer}>
         <Image
