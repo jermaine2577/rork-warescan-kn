@@ -271,26 +271,19 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   useEffect(() => {
     const loadUserId = async () => {
       const userId = await getCurrentUserId();
-      console.log('Current user ID loaded:', userId);
       
-      const currentUser = await getCurrentUser();
-      const effectiveId = getEffectiveOwnerIdForUser(currentUser);
-      console.log('Current user role:', currentUser?.role, 'Effective owner ID:', effectiveId);
-      
-      if (currentUser?.role === 'sub-user' && currentUser?.managerId) {
-        console.log('Employee detected, using manager ID:', currentUser.managerId);
+      if (userId) {
+        const currentUser = await getCurrentUser();
+        const effectiveId = getEffectiveOwnerIdForUser(currentUser);
+        
+        setCurrentUserId(userId);
+        setEffectiveOwnerId(effectiveId);
+      } else {
+        setCurrentUserId(null);
+        setEffectiveOwnerId(null);
       }
-      
-      setCurrentUserId(userId);
-      setEffectiveOwnerId(effectiveId);
     };
     loadUserId();
-    
-    const interval = setInterval(() => {
-      loadUserId();
-    }, 2000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   const productsQuery = useQuery({
