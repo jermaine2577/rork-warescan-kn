@@ -264,13 +264,13 @@ export default function NevisScannerScreen() {
         let errorMessage = '';
         
         if (product.status === 'received') {
-          errorMessage = 'This package has already been accepted in Nevis. Please scan a different package.';
+          errorMessage = 'This package has not been transferred yet.\n\nPlease scan it in the RELEASE PORTAL first to transfer it to Nevis. After that, you can scan it here to accept it in the Nevis warehouse.\n\nWorkflow: Release Portal → Transfer → Nevis Receiving';
         } else if (product.status === 'released') {
-          errorMessage = 'This package has already been released. Please scan a different package.';
+          errorMessage = 'This package was released to customers. It cannot be received in Nevis.';
         } else if (product.status === 'awaiting_from_nevis') {
-          errorMessage = 'This package is awaiting return from Nevis. Please scan a different package.';
+          errorMessage = 'This package is awaiting return to the main portal. Use the main portal scanner to accept it back.';
         } else {
-          errorMessage = 'This package is not ready to be received. Please scan a different package.';
+          errorMessage = `This package is not ready to be received. Current status: ${product.status}. Expected status: "transferred to Nevis".`;
         }
         
         const resetScannerState = () => {
@@ -289,7 +289,7 @@ export default function NevisScannerScreen() {
         
         setTimeout(() => {
           Alert.alert(
-            'Already Processed',
+            'Invalid Status',
             errorMessage,
             [
               {
