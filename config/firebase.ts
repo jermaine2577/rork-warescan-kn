@@ -4,12 +4,12 @@ import { getAuth, type Auth } from 'firebase/auth';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD3ZoJx9Y7KpQm5VxLqBwN8Rt4Uf2Gh6Ik",
-  authDomain: "shipitforless-inventory.firebaseapp.com",
-  projectId: "shipitforless-inventory",
-  storageBucket: "shipitforless-inventory.firebasestorage.app",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef123456789",
+  apiKey: "YOUR_API_KEY_HERE",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID",
   iosBundleId: "app.rork.mrk54opr365nuifvcfrsm-9xo1ldcc"
 };
 
