@@ -484,6 +484,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     
     const updatedProducts = [...products, newProduct];
     
+    queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], updatedProducts);
+    
     saveProductsMutate(updatedProducts, {
       onSuccess: () => {
         console.log('✓ Product added successfully:', trimmedBarcode);
@@ -491,11 +493,12 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       },
       onError: (error) => {
         console.error('Failed to save product:', error);
+        queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId, currentUserId] });
       }
     });
     
     return true;
-  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId, queryClient]);
 
   const updateProduct = useCallback((id: string, updates: Partial<ProductInput>) => {
     const ownerId = getEffectiveOwnerId();
@@ -506,6 +509,9 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     );
     const updatedProduct = updatedProducts.find(p => p.id === id);
     console.log('✓ Updating product:', id, 'with updates:', updates);
+    
+    queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], updatedProducts);
+    
     saveProductsMutate(updatedProducts, {
       onSuccess: () => {
         if (updatedProduct) {
@@ -515,9 +521,10 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       },
       onError: (error) => {
         console.error('❌ Failed to update product:', error);
+        queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId, currentUserId] });
       }
     });
-  }, [products, saveProductsMutate, getEffectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, queryClient, effectiveOwnerId, currentUserId]);
 
   const releaseProduct = useCallback((id: string, username?: string) => {
     try {
@@ -551,6 +558,9 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
           : p
       );
       const updatedProduct = updatedProducts.find(p => p.id === id);
+      
+      queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], updatedProducts);
+      
       saveProductsMutate(updatedProducts, {
         onSuccess: () => {
           if (updatedProduct) {
@@ -559,13 +569,14 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
         },
         onError: (error) => {
           console.error('Failed to release product:', error);
+          queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId, currentUserId] });
         }
       });
     } catch (error) {
       console.error('Critical error in releaseProduct:', error);
       throw error;
     }
-  }, [products, saveProductsMutate, getEffectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, queryClient, effectiveOwnerId, currentUserId]);
 
   const transferProduct = useCallback((id: string, username?: string) => {
     const ownerId = getEffectiveOwnerId();
@@ -767,12 +778,15 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     const updatedProducts = [...products, ...productsToAdd];
     console.log('Importing', productsToAdd.length, 'packages for user', ownerId);
     
+    queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], updatedProducts);
+    
     saveProductsMutate(updatedProducts, {
       onSuccess: () => {
         syncProductsToFirestoreBatch(productsToAdd, ownerId);
       },
       onError: (error) => {
         console.error('Failed to bulk import products:', error);
+        queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId, currentUserId] });
       }
     });
     
@@ -783,7 +797,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       invalid: invalid.length,
       isDuplicateUpload: false
     };
-  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, currentUserId, effectiveOwnerId, queryClient]);
 
   const markAsValidated = useCallback((barcode: string, storageLocation?: string, destination?: Destination, notes?: string) => {
     const ownerId = getEffectiveOwnerId();
@@ -802,15 +816,21 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     );
     const updatedProduct = updatedProducts.find(p => p.barcode === trimmedBarcode && p.ownerId === ownerId);
     if (updatedProduct && updatedProduct.uploadStatus === 'validated') {
+      queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], updatedProducts);
+      
       saveProductsMutate(updatedProducts, {
         onSuccess: () => {
           syncSingleProductToFirestore(updatedProduct, ownerId);
+        },
+        onError: (error) => {
+          console.error('Failed to validate product:', error);
+          queryClient.invalidateQueries({ queryKey: ['products', effectiveOwnerId, currentUserId] });
         }
       });
       return true;
     }
     return false;
-  }, [products, saveProductsMutate, getEffectiveOwnerId]);
+  }, [products, saveProductsMutate, getEffectiveOwnerId, queryClient, effectiveOwnerId, currentUserId]);
 
   const verifyProductFromNevis = useCallback((barcode: string, username?: string) => {
     const ownerId = getEffectiveOwnerId();
