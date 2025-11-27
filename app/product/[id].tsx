@@ -516,6 +516,15 @@ export default function ProductDetailScreen() {
           )}
         </View>
 
+        {(product.uploadStatus === 'uploaded' || product.status === 'received') && (
+          <TouchableOpacity style={styles.validateButton} onPress={handleSave}>
+            <Save size={20} color="#FFFFFF" />
+            <Text style={styles.validateButtonText}>
+              {product.uploadStatus === 'uploaded' ? 'Validate Package' : 'Save Changes'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
           <Trash2 size={20} color="#EF4444" />
           <Text style={styles.deleteButtonText}>Delete Package</Text>
@@ -756,6 +765,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#EF4444',
+  },
+  validateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#10B981',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  validateButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
   },
   readOnlyField: {
     backgroundColor: '#F3F4F6',
