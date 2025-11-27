@@ -670,6 +670,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 48,
+    width: '100%',
   },
   title: {
     fontSize: 32,
@@ -677,6 +678,7 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 8,
     textAlign: 'center',
+    width: '100%',
   },
   subtitle: {
     fontSize: 16,
