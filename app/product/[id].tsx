@@ -154,10 +154,10 @@ export default function ProductDetailScreen() {
         status,
         storageLocation: storageLocation.trim(),
         destination,
-        notes: notes.trim() || undefined,
-        customerName: customerName.trim() || undefined,
-        price: price.trim() || undefined,
-        comment: comment.trim() || undefined,
+        notes: notes.trim(),
+        customerName: customerName.trim(),
+        price: price.trim(),
+        comment: comment.trim(),
       };
       
       console.log('Saving product with updates:', updates);

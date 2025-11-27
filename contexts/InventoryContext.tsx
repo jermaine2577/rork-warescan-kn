@@ -92,8 +92,9 @@ async function loadProducts(userId: string | null): Promise<Product[]> {
             receivedBy: data.receivedBy,
             releasedBy: data.releasedBy,
             transferredBy: data.transferredBy,
-            price: data.price,
-            notes: data.notes,
+            price: data.price || '',
+            notes: data.notes || '',
+            comment: data.comment || '',
           } as Product);
         });
         
@@ -388,8 +389,9 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
                 receivedBy: data.receivedBy,
                 releasedBy: data.releasedBy,
                 transferredBy: data.transferredBy,
-                price: data.price,
-                notes: data.notes,
+                price: data.price || '',
+                notes: data.notes || '',
+                comment: data.comment || '',
               } as Product);
             });
             
