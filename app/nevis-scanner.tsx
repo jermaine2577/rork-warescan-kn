@@ -11,6 +11,7 @@ import {
   Animated,
   TextInput,
   Alert,
+  Modal,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
@@ -33,6 +34,8 @@ export default function NevisScannerScreen() {
   const [lastScannedBarcode, setLastScannedBarcode] = useState('');
   const hardwareScannerRef = useRef<TextInput>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{ barcode: string; customerName?: string; storageLocation?: string } | null>(null);
 
   const playSuccessFeedback = useCallback(async () => {
     try {
@@ -336,34 +339,26 @@ export default function NevisScannerScreen() {
         return;
       }
 
-      setTimeout(() => {
-        Alert.alert(
-          '✓ Successfully Received',
-          `Package ${trimmedBarcode} has been received in Nevis!\n\nCustomer: ${product.customerName || 'N/A'}\nStorage: ${product.storageLocation || 'N/A'}`,
-          [
-            {
-              text: 'Scan Another',
-              style: 'default',
-              onPress: () => {
-                setScanned(false);
-                isNavigatingRef.current = false;
-                setLastScannedBarcode(trimmedBarcode);
-                if (scanMode === 'scanner') {
-                  setHardwareScannerInput('');
-                  setTimeout(() => hardwareScannerRef.current?.focus(), 100);
-                }
-              },
-            },
-            {
-              text: 'Done',
-              style: 'cancel',
-              onPress: () => {
-                router.back();
-              },
-            },
-          ]
-        );
-      }, 100);
+      setSuccessDetails({
+        barcode: trimmedBarcode,
+        customerName: product.customerName,
+        storageLocation: product.storageLocation,
+      });
+      setShowSuccessModal(true);
+
+      if (Platform.OS === 'web') {
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          setSuccessDetails(null);
+          setScanned(false);
+          isNavigatingRef.current = false;
+          setLastScannedBarcode(trimmedBarcode);
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+          }
+        }, 2500);
+      }
     } catch (error) {
       console.error('CRITICAL: Error processing barcode:', error);
       console.error('Error details:', {
@@ -793,6 +788,86 @@ export default function NevisScannerScreen() {
           </View>
         </View>
       )}
+
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSuccessModal(false);
+          setSuccessDetails(null);
+          setScanned(false);
+          isNavigatingRef.current = false;
+          if (scanMode === 'scanner') {
+            setHardwareScannerInput('');
+            setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+          }
+        }}
+      >
+        <View style={styles.successModalOverlay}>
+          <View style={styles.successModalContent}>
+            <View style={styles.successIconContainer}>
+              <View style={styles.successIconCircle}>
+                <Text style={styles.successIconText}>✓</Text>
+              </View>
+            </View>
+            <Text style={styles.successModalTitle}>Successfully Received!</Text>
+            {successDetails && (
+              <View style={styles.successModalDetails}>
+                <View style={styles.successDetailRow}>
+                  <Text style={styles.successDetailLabel}>Barcode:</Text>
+                  <Text style={styles.successDetailValue}>{successDetails.barcode}</Text>
+                </View>
+                {successDetails.customerName && (
+                  <View style={styles.successDetailRow}>
+                    <Text style={styles.successDetailLabel}>Customer:</Text>
+                    <Text style={styles.successDetailValue}>{successDetails.customerName}</Text>
+                  </View>
+                )}
+                {successDetails.storageLocation && (
+                  <View style={styles.successDetailRow}>
+                    <Text style={styles.successDetailLabel}>Storage:</Text>
+                    <Text style={styles.successDetailValue}>{successDetails.storageLocation}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+            {Platform.OS !== 'web' && (
+              <View style={styles.successModalButtons}>
+                <TouchableOpacity
+                  style={styles.successModalButton}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    setSuccessDetails(null);
+                    setScanned(false);
+                    isNavigatingRef.current = false;
+                    setLastScannedBarcode(successDetails?.barcode || '');
+                    if (scanMode === 'scanner') {
+                      setHardwareScannerInput('');
+                      setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+                    }
+                  }}
+                >
+                  <Text style={styles.successModalButtonText}>Scan Another</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.successModalButton, styles.successModalButtonDone]}
+                  onPress={() => {
+                    setShowSuccessModal(false);
+                    setSuccessDetails(null);
+                    router.back();
+                  }}
+                >
+                  <Text style={[styles.successModalButtonText, styles.successModalButtonTextDone]}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {Platform.OS === 'web' && (
+              <Text style={styles.successModalAutoClose}>Auto-closing in a moment...</Text>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1129,5 +1204,121 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  successModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 40,
+    width: '100%',
+    maxWidth: 500,
+    alignItems: 'center',
+    gap: 24,
+    ...Platform.select({
+      web: {
+        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+      },
+      default: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 10,
+      },
+    }),
+  },
+  successIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      web: {
+        boxShadow: '0 8px 24px rgba(16, 185, 129, 0.4)',
+      },
+      default: {
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        elevation: 8,
+      },
+    }),
+  },
+  successIconText: {
+    fontSize: 56,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  successModalTitle: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: '#10B981',
+    textAlign: 'center',
+  },
+  successModalDetails: {
+    width: '100%',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 20,
+    gap: 16,
+  },
+  successDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  successDetailLabel: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#6B7280',
+    minWidth: 90,
+  },
+  successDetailValue: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#111827',
+    flex: 1,
+  },
+  successModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  successModalButton: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  successModalButtonDone: {
+    backgroundColor: '#F3F4F6',
+  },
+  successModalButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  successModalButtonTextDone: {
+    color: '#374151',
+  },
+  successModalAutoClose: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontStyle: 'italic' as const,
+    textAlign: 'center',
   },
 });
