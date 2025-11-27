@@ -156,7 +156,7 @@ export default function ScannerScreen() {
       setTimeout(() => {
         Alert.alert(
           'Invalid Status',
-          `This package has status: ${verificationResult.currentStatus}. Only packages awaiting from Nevis can be verified here.\n\nPlease use the regular receiving process for new packages.`,
+          `This package has status: ${verificationResult.currentStatus}. Only packages with 'received' (uploaded) or 'awaiting from Nevis' status can be verified here.\n\nPlease check the package status.`,
           [
             {
               text: 'OK',

@@ -876,7 +876,11 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       return { success: false, error: 'not_found' };
     }
     
-    if (product.status !== 'awaiting_from_nevis') {
+    if (product.status !== 'awaiting_from_nevis' && product.status !== 'received') {
+      return { success: false, error: 'invalid_status', currentStatus: product.status };
+    }
+    
+    if (product.status === 'received' && product.uploadStatus !== 'uploaded') {
       return { success: false, error: 'invalid_status', currentStatus: product.status };
     }
     
@@ -885,6 +889,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
         ? {
             ...p,
             status: 'received' as const,
+            uploadStatus: 'validated' as const,
             dateUpdated: new Date().toISOString(),
             receivedBy: username,
           }
