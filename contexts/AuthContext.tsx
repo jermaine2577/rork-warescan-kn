@@ -3,7 +3,7 @@ import createContextHook from '@nkzw/create-context-hook';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo } from 'react';
 import { getDb, initializeFirebase } from '@/config/firebase';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const STORAGE_KEY = '@inventory_users';
 const SESSION_KEY = '@inventory_session';
@@ -60,71 +60,109 @@ interface Session {
 
 async function loadUsers(): Promise<User[]> {
   try {
-    let stored = await AsyncStorage.getItem(STORAGE_KEY);
+    console.log('Loading users from Firestore...');
+    await initializeFirebase();
+    const db = getDb();
     
-    if (!stored || stored.trim() === '') {
-      console.log('No stored users found');
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    if (!db) {
+      console.error('Firestore not initialized');
       return [];
     }
     
-    stored = stored.trim();
+    const usersCol = collection(db, 'users');
+    const snapshot = await getDocs(usersCol);
     
-    if (stored.length < 2) {
-      console.warn('Invalid stored users data (too short), resetting');
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      return [];
-    }
+    const users: User[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      users.push({
+        id: docSnap.id,
+        username: data.username || '',
+        password: data.password || '',
+        securityQuestion: data.securityQuestion || '',
+        securityAnswer: data.securityAnswer || '',
+        securityQuestion1: data.securityQuestion1,
+        securityAnswer1: data.securityAnswer1,
+        securityQuestion2: data.securityQuestion2,
+        securityAnswer2: data.securityAnswer2,
+        createdAt: data.createdAt || new Date().toISOString(),
+        role: data.role || 'manager',
+        managerId: data.managerId,
+        privileges: data.privileges,
+        uniqueKey: data.uniqueKey,
+        isActive: data.isActive !== false,
+      });
+    });
     
-    if (/^(\[?object|undefined|null|NaN)/i.test(stored)) {
-      console.error('Storage contains non-JSON string:', stored.substring(0, 50), '... resetting');
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      return [];
-    }
+    console.log(`✓ Loaded ${users.length} users from Firestore`);
     
-    const firstChar = stored[0];
-    if (firstChar !== '[' && firstChar !== '{') {
-      console.error('Invalid JSON format in users storage, expected [ or { but got:', firstChar);
-      console.error('First 100 chars of corrupted data:', stored.substring(0, 100));
-      console.error('Fixing corrupted user storage...');
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      return [];
-    }
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    
+    return users;
+  } catch (error) {
+    console.error('❌ Error loading users from Firestore:', error);
     
     try {
-      const users = JSON.parse(stored);
+      let stored = await AsyncStorage.getItem(STORAGE_KEY);
       
-      if (!Array.isArray(users)) {
-        console.warn('Cached users is not an array, resetting');
+      if (!stored || stored.trim() === '') {
+        console.log('No cached users found');
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        return [];
+      }
+      
+      stored = stored.trim();
+      
+      if (stored.length < 2) {
+        console.warn('Invalid cached users data (too short), resetting');
         await AsyncStorage.removeItem(STORAGE_KEY);
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
         return [];
       }
       
-      console.log(`✓ Loaded ${users.length} users`);
-      return users;
-    } catch (parseError) {
-      console.error('❌ JSON Parse error in users:', parseError);
-      console.error('Error message:', parseError instanceof Error ? parseError.message : String(parseError));
-      console.error('First 200 chars of corrupted data:', stored.substring(0, 200));
-      console.error('Last 200 chars of corrupted data:', stored.substring(Math.max(0, stored.length - 200)));
-      console.error('Fixing storage due to JSON parse error...');
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      if (/^(\[?object|undefined|null|NaN)/i.test(stored)) {
+        console.error('Cache contains non-JSON string:', stored.substring(0, 50), '... resetting');
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        return [];
+      }
+      
+      const firstChar = stored[0];
+      if (firstChar !== '[' && firstChar !== '{') {
+        console.error('Invalid JSON format in cache, expected [ or { but got:', firstChar);
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        return [];
+      }
+      
+      try {
+        const users = JSON.parse(stored);
+        
+        if (!Array.isArray(users)) {
+          console.warn('Cached users is not an array, resetting');
+          await AsyncStorage.removeItem(STORAGE_KEY);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+          return [];
+        }
+        
+        console.log(`✓ Loaded ${users.length} users from cache (Firestore failed)`);
+        return users;
+      } catch (parseError) {
+        console.error('❌ JSON Parse error in cached users:', parseError);
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+        return [];
+      }
+    } catch (cacheError) {
+      console.error('❌ Critical error loading cached users:', cacheError);
+      try {
+        await AsyncStorage.removeItem(STORAGE_KEY);
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+      } catch (clearError) {
+        console.error('Failed to clear storage:', clearError);
+      }
       return [];
     }
-  } catch (error) {
-    console.error('❌ Critical error loading users:', error);
-    try {
-      await AsyncStorage.removeItem(STORAGE_KEY);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-    } catch (clearError) {
-      console.error('Failed to clear storage:', clearError);
-    }
-    return [];
   }
 }
 
@@ -170,13 +208,21 @@ async function syncUserToFirestore(user: User): Promise<void> {
   try {
     await initializeFirebase();
     const db = getDb();
-    if (!db) return;
+    if (!db) {
+      console.error('Firestore not initialized, cannot sync user');
+      return;
+    }
     const userDoc = doc(db, 'users', user.id);
     const cleanedUser = cleanUserForFirestore(user);
     await setDoc(userDoc, cleanedUser, { merge: true });
-    console.log('User synced to Firestore:', user.id);
+    console.log('✓ User synced to Firestore:', user.id);
+    
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+    await loadUsers();
+    return;
   } catch (error) {
-    console.error('Error syncing user to Firestore:', error);
+    console.error('❌ Error syncing user to Firestore:', error);
+    throw error;
   }
 }
 
