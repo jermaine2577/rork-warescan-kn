@@ -1,6 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import { LogIn, UserPlus, ChevronDown, Key } from 'lucide-react-native';
+import { LogIn, UserPlus, ChevronDown, Key, AlertCircle } from 'lucide-react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import { BRAND_COLORS } from '@/constants/colors';
@@ -43,6 +43,7 @@ export default function LoginScreen() {
   const [resetNewPassword, setResetNewPassword] = useState('');
   const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const [resetStep, setResetStep] = useState<'username' | 'questions' | 'newPassword'>('username');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const SECURITY_QUESTIONS = [
     "What was the name of your first pet?",
@@ -58,13 +59,23 @@ export default function LoginScreen() {
   WebBrowser.maybeCompleteAuthSession();
 
   const handleLogin = async () => {
+    setErrorMessage(null);
+    
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter username and password');
+      const message = 'Please enter username and password';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
 
     if (loginType === 'employee' && !uniqueKey.trim()) {
-      Alert.alert('Error', 'Please enter your unique employee key');
+      const message = 'Please enter your unique employee key';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
 
@@ -77,38 +88,68 @@ export default function LoginScreen() {
       });
       router.replace('/portal-selection');
     } catch (error) {
-      Alert.alert('Login Failed', error instanceof Error ? error.message : 'Invalid credentials');
+      const message = error instanceof Error ? error.message : 'Invalid credentials';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Login Failed', message);
+      }
     }
   };
 
   const handleRegister = async () => {
+    setErrorMessage(null);
+    
     if (!username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter username and password');
+      const message = 'Please enter username and password';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      const message = 'Passwords do not match';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
 
     if (password.length < 4) {
-      Alert.alert('Error', 'Password must be at least 4 characters');
+      const message = 'Password must be at least 4 characters';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
     
     if (!securityQuestion1 || !securityQuestion2) {
-      Alert.alert('Error', 'Please select both security questions');
+      const message = 'Please select both security questions';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
     
     if (securityQuestion1 === securityQuestion2) {
-      Alert.alert('Error', 'Please select different security questions');
+      const message = 'Please select different security questions';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
     
     if (!securityAnswer1.trim() || !securityAnswer2.trim()) {
-      Alert.alert('Error', 'Please provide answers to both security questions');
+      const message = 'Please provide answers to both security questions';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Error', message);
+      }
       return;
     }
 
@@ -123,22 +164,25 @@ export default function LoginScreen() {
         securityQuestion2,
         securityAnswer2
       });
-      Alert.alert('Success', 'Account created! Please log in.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            setShowRegisterForm(false);
-            setPassword('');
-            setConfirmPassword('');
-            setSecurityQuestion1('');
-            setSecurityAnswer1('');
-            setSecurityQuestion2('');
-            setSecurityAnswer2('');
-          },
-        },
-      ]);
+      
+      setShowRegisterForm(false);
+      setPassword('');
+      setConfirmPassword('');
+      setSecurityQuestion1('');
+      setSecurityAnswer1('');
+      setSecurityQuestion2('');
+      setSecurityAnswer2('');
+      setErrorMessage(null);
+      
+      if (Platform.OS !== 'web') {
+        Alert.alert('Success', 'Account created! Please log in.');
+      }
     } catch (error) {
-      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'Could not create account');
+      const message = error instanceof Error ? error.message : 'Could not create account';
+      setErrorMessage(message);
+      if (Platform.OS !== 'web') {
+        Alert.alert('Registration Failed', message);
+      }
     }
   };
 
@@ -260,6 +304,13 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
+          {errorMessage && (
+            <View style={styles.errorContainer}>
+              <AlertCircle size={20} color="#DC2626" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+          
           {!showRegisterForm && (
             <View style={styles.loginTypeSelector}>
               <TouchableOpacity
@@ -442,6 +493,7 @@ export default function LoginScreen() {
                 setSecurityAnswer2('');
                 setLoginType('admin');
                 setUniqueKey('');
+                setErrorMessage(null);
               }}
             >
               <Text style={styles.secondaryButtonText}>
@@ -938,5 +990,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#374151',
     fontStyle: 'italic' as const,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 8,
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#DC2626',
+    fontWeight: '500' as const,
+    lineHeight: 20,
   },
 });
