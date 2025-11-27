@@ -394,7 +394,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
             });
             
             console.log(`🔄 Real-time Firestore sync: ${products.length} products received`);
-            queryClient.setQueryData(['products', effectiveOwnerId], products);
+            queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], products);
             
             const storageKey = getUserStorageKey(effectiveOwnerId);
             AsyncStorage.setItem(storageKey, JSON.stringify(products)).catch(err => 
@@ -440,7 +440,7 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
   const saveMutation = useMutation({
     mutationFn: (products: Product[]) => saveProducts(products, currentUserId),
     onSuccess: (data) => {
-      queryClient.setQueryData(['products', currentUserId], data);
+      queryClient.setQueryData(['products', effectiveOwnerId, currentUserId], data);
     },
   });
 
