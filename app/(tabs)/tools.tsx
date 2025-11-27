@@ -159,17 +159,25 @@ export default function ToolsScreen() {
   }, [products, financialDestinationFilter, financialStatusFilter, dateRangeStart, dateRangeEnd, userFilter]);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: () => {
-          logout();
-          router.replace('/login');
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Are you sure you want to logout?');
+      if (confirmed) {
+        logout();
+        router.replace('/login');
+      }
+    } else {
+      Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => {
+            logout();
+            router.replace('/login');
+          },
         },
-      },
-    ]);
+      ]);
+    }
   };
 
   const handleDeleteAccount = () => {

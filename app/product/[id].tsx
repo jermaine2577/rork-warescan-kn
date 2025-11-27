@@ -175,20 +175,33 @@ export default function ProductDetailScreen() {
         ? 'Package validated successfully! Storage location updated and ready for release.'
         : 'Package updated successfully. Changes will sync across all devices.';
       
-      setTimeout(() => {
-        webSafeAlert('Success', message, () => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace('/(tabs)');
-          }
-        });
-      }, 100);
+      if (Platform.OS === 'web') {
+        window.alert(`Success\n\n${message}`);
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        setTimeout(() => {
+          webSafeAlert('Success', message, () => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          });
+        }, 100);
+      }
     } catch (error) {
       console.error('Error saving product:', error);
-      setTimeout(() => {
-        webSafeAlert('Error', 'Failed to save changes. Please try again.');
-      }, 100);
+      if (Platform.OS === 'web') {
+        window.alert('Error\n\nFailed to save changes. Please try again.');
+      } else {
+        setTimeout(() => {
+          webSafeAlert('Error', 'Failed to save changes. Please try again.');
+        }, 100);
+      }
     }
   };
 
