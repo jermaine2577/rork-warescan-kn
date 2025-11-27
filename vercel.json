@@ -2,7 +2,7 @@
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
   "devCommand": "npx expo start --web",
-  "installCommand": "bun install",
+  "installCommand": "npm install",
   "routes": [
     {
       "src": "/assets/(.*)",
