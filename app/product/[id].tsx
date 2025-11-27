@@ -139,12 +139,13 @@ export default function ProductDetailScreen() {
 
   const handleSave = () => {
     try {
-      if (!barcode.trim()) {
+      if (!barcode || !barcode.trim()) {
         Alert.alert('Error', 'Barcode cannot be empty');
         return;
       }
 
-      if (!storageLocation || !storageLocation.trim()) {
+      const trimmedStorage = storageLocation?.trim() || '';
+      if (!trimmedStorage) {
         Alert.alert('Error', 'Storage location is required');
         return;
       }
@@ -154,12 +155,12 @@ export default function ProductDetailScreen() {
       const updates: any = {
         barcode: barcode.trim(),
         status: needsValidation ? 'received' as const : status,
-        storageLocation: storageLocation.trim(),
+        storageLocation: trimmedStorage,
         destination,
-        notes: notes.trim(),
-        customerName: customerName.trim(),
-        price: price.trim(),
-        comment: comment.trim(),
+        notes: notes?.trim() || '',
+        customerName: customerName?.trim() || '',
+        price: price?.trim() || '',
+        comment: comment?.trim() || '',
       };
       
       if (needsValidation) {
