@@ -308,6 +308,17 @@ export default function ReleaseScreen() {
     setScanned(false);
     
     if (productToAction.destination === 'Nevis') {
+      if (productToAction.uploadStatus !== 'validated') {
+        setTimeout(() => {
+          Alert.alert(
+            'Cannot Transfer',
+            'This package must be validated in the receiving portal before it can be transferred to Nevis.',
+            [{ text: 'OK' }],
+            { cancelable: false }
+          );
+        }, 100);
+        return;
+      }
       transferProduct(selectedProduct, session?.username);
       await playSuccessFeedback();
 

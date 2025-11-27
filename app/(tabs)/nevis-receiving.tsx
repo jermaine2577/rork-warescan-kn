@@ -87,6 +87,20 @@ export default function NevisReceivingScreen() {
   const handleConfirmReceive = () => {
     if (!receivingProduct) return;
     
+    if (receivingProduct.uploadStatus !== 'validated') {
+      setShowReceivingModal(false);
+      setReceivingProduct(null);
+      setTimeout(() => {
+        Alert.alert(
+          'Cannot Receive',
+          'This package must be validated in the main receiving portal before it can be accepted in Nevis. Please validate it first.',
+          [{ text: 'OK' }],
+          { cancelable: false }
+        );
+      }, 100);
+      return;
+    }
+    
     updateProduct(receivingProduct.id, {
       status: 'received',
       barcode: receivingProduct.barcode,

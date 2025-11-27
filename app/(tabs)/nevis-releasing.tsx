@@ -123,16 +123,8 @@ export default function NevisReleasingScreen() {
         Alert.alert(
           'Invalid Barcode',
           'Please scan a product barcode, not a QR code or URL.',
-          [
-            {
-              text: 'OK',
-              onPress: resetState
-            }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: resetState
-          }
+          [{ text: 'OK', onPress: resetState }],
+          { cancelable: false }
         );
       }, 400);
       return;
@@ -175,16 +167,8 @@ export default function NevisReleasingScreen() {
         Alert.alert(
           'Not Found',
           'Package with this barcode not found in the system.',
-          [
-            {
-              text: 'OK',
-              onPress: resetState
-            }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: resetState
-          }
+          [{ text: 'OK', onPress: resetState }],
+          { cancelable: false }
         );
       }, 400);
       return;
@@ -206,16 +190,8 @@ export default function NevisReleasingScreen() {
         Alert.alert(
           'Already Released',
           'This package has already been released. Please scan a different package.',
-          [
-            {
-              text: 'OK',
-              onPress: resetState
-            }
-          ],
-          { 
-            cancelable: true,
-            onDismiss: resetState
-          }
+          [{ text: 'OK', onPress: resetState }],
+          { cancelable: false }
         );
       }, 400);
       return;
@@ -240,16 +216,8 @@ export default function NevisReleasingScreen() {
           Alert.alert(
             'Wrong Portal',
             `This package belongs to "${destinationName}", not Nevis.\n\nPlease use the correct releasing portal for this package.`,
-            [
-              {
-                text: 'OK',
-                onPress: resetState
-              }
-            ],
-            { 
-              cancelable: true,
-              onDismiss: resetState
-            }
+            [{ text: 'OK', onPress: resetState }],
+            { cancelable: false }
           );
         } catch (alertError) {
           console.error('Could not show alert (non-critical):', alertError);
@@ -287,16 +255,8 @@ export default function NevisReleasingScreen() {
           Alert.alert(
             errorTitle,
             errorMessage,
-            [
-              {
-                text: 'OK',
-                onPress: resetState
-              }
-            ],
-            { 
-              cancelable: true,
-              onDismiss: resetState
-            }
+            [{ text: 'OK', onPress: resetState }],
+            { cancelable: false }
           );
         } catch (alertError) {
           console.error('Could not show alert (non-critical):', alertError);
