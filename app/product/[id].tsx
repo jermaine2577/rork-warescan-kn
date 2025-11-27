@@ -149,9 +149,11 @@ export default function ProductDetailScreen() {
         return;
       }
 
-      const updates = {
+      const needsValidation = product.uploadStatus === 'uploaded' || product.status === 'awaiting_from_nevis';
+      
+      const updates: any = {
         barcode: barcode.trim(),
-        status,
+        status: needsValidation ? 'received' as const : status,
         storageLocation: storageLocation.trim(),
         destination,
         notes: notes.trim(),
@@ -160,11 +162,19 @@ export default function ProductDetailScreen() {
         comment: comment.trim(),
       };
       
+      if (needsValidation) {
+        updates.uploadStatus = 'validated' as const;
+      }
+      
       console.log('Saving product with updates:', updates);
       updateProduct(params.id, updates);
 
+      const message = needsValidation 
+        ? 'Package validated successfully! Storage location updated and ready for release.'
+        : 'Package updated successfully. Changes will sync across all devices.';
+      
       setTimeout(() => {
-        Alert.alert('Success', 'Package updated successfully. Changes will sync across all devices.', [
+        Alert.alert('Success', message, [
           { text: 'OK', onPress: () => {
             if (router.canGoBack()) {
               router.back();

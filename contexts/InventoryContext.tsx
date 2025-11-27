@@ -880,31 +880,8 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
       return { success: false, error: 'invalid_status', currentStatus: product.status };
     }
     
-    if (product.status === 'received' && product.uploadStatus !== 'uploaded') {
-      return { success: false, error: 'invalid_status', currentStatus: product.status };
-    }
-    
-    const updatedProducts = products.map(p =>
-      p.barcode === trimmedBarcode && p.ownerId === ownerId
-        ? {
-            ...p,
-            status: 'received' as const,
-            uploadStatus: 'validated' as const,
-            dateUpdated: new Date().toISOString(),
-            receivedBy: username,
-          }
-        : p
-    );
-    const updatedProduct = updatedProducts.find(p => p.barcode === trimmedBarcode && p.ownerId === ownerId);
-    saveProductsMutate(updatedProducts, {
-      onSuccess: () => {
-        if (updatedProduct) {
-          syncSingleProductToFirestore(updatedProduct, ownerId);
-        }
-      }
-    });
-    return { success: true, product: updatedProduct };
-  }, [products, saveProductsMutate, getEffectiveOwnerId]);
+    return { success: true, product, needsUpdate: product.status === 'awaiting_from_nevis' || product.uploadStatus === 'uploaded' };
+  }, [products, getEffectiveOwnerId]);
 
   const filteredProducts = useMemo(() => {
     if (searchQuery === '' && statusFilter === 'all' && destinationFilter === 'all') {
