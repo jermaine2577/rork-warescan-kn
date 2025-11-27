@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { Product, ProductInput, ProductStatus, Destination } from '@/types/inventory';
 import { getDb, initializeFirebase } from '@/config/firebase';
-import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, writeBatch, onSnapshot } from 'firebase/firestore';
 import type { User } from '@/contexts/AuthContext';
 
 const CURRENT_USER_KEY = '@current_user_id';
@@ -343,6 +343,72 @@ export const [InventoryProvider, useInventory] = createContextHook(() => {
     
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId || !effectiveOwnerId) return;
+
+    console.log(`Setting up real-time listener for user ${effectiveOwnerId}`);
+    
+    const setupListener = async () => {
+      try {
+        await initializeFirebase();
+        const db = getDb();
+        
+        if (!db) {
+          console.warn('DB not available, falling back to query');
+          return;
+        }
+
+        const productsCol = collection(db, 'users', effectiveOwnerId, 'products');
+        
+        const unsubscribe = onSnapshot(
+          productsCol,
+          (snapshot) => {
+            const products: Product[] = [];
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data();
+              products.push({
+                id: docSnap.id,
+                ownerId: data.ownerId || effectiveOwnerId,
+                barcode: data.barcode || '',
+                customerName: data.customerName,
+                storageLocation: data.storageLocation,
+                destination: data.destination || 'Saint Kitts',
+                status: data.status || 'received',
+                uploadStatus: data.uploadStatus,
+                dateAdded: data.dateAdded || new Date().toISOString(),
+                dateUpdated: data.dateUpdated || new Date().toISOString(),
+                dateReleased: data.dateReleased,
+                dateTransferred: data.dateTransferred,
+                receivedBy: data.receivedBy,
+                releasedBy: data.releasedBy,
+                transferredBy: data.transferredBy,
+                price: data.price,
+                notes: data.notes,
+              } as Product);
+            });
+            
+            console.log(`🔄 Real-time update: ${products.length} products`);
+            queryClient.setQueryData(['products', currentUserId], products);
+            
+            const storageKey = getUserStorageKey(effectiveOwnerId);
+            AsyncStorage.setItem(storageKey, JSON.stringify(products)).catch(err => 
+              console.error('Failed to cache products:', err)
+            );
+          },
+          (error) => {
+            console.error('❌ Firestore listener error:', error);
+          }
+        );
+
+        return unsubscribe;
+      } catch (error) {
+        console.error('Error setting up real-time listener:', error);
+      }
+    };
+
+    setupListener();
+  }, [currentUserId, effectiveOwnerId, queryClient]);
 
   const productsQuery = useQuery({
     queryKey: ['products', currentUserId],
