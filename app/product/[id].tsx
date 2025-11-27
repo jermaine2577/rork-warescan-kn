@@ -144,7 +144,7 @@ export default function ProductDetailScreen() {
         return;
       }
 
-      if (!storageLocation || !storageLocation.trim()) {
+      if (!storageLocation?.trim()) {
         Alert.alert('Error', 'Storage location is required');
         return;
       }
