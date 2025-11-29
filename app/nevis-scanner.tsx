@@ -2,6 +2,7 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Stack, useRouter } from 'expo-router';
 import { X, ScanLine, Keyboard } from 'lucide-react-native';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import WebBarcodeScanner from '@/components/WebBarcodeScanner';
 import {
   StyleSheet,
   Text,
@@ -622,29 +623,124 @@ export default function NevisScannerScreen() {
       </View>
 
       {scanMode === 'camera' ? (
-        <CameraView
-          style={styles.camera}
-          facing={facing}
-          onBarcodeScanned={handleBarCodeScanned}
-          barcodeScannerSettings={{
-            barcodeTypes: [
-              'qr',
-              'ean13',
-              'ean8',
-              'code128',
-              'code39',
-              'code93',
-              'upc_a',
-              'upc_e',
-              'codabar',
-              'itf14',
-              'aztec',
-              'pdf417',
-              'datamatrix',
-            ],
-          }}
-        >
-        <View style={styles.overlay}>
+        Platform.OS === 'web' ? (
+          <View style={styles.camera}>
+            <WebBarcodeScanner
+              onBarcodeScanned={(data) => handleBarCodeScanned({ data })}
+              isScanning={!scanned}
+              style={styles.camera}
+            />
+            <View style={styles.overlay}>
+              <View style={styles.topOverlay}>
+                <View style={styles.topSection}>
+                  <View style={styles.iconContainer}>
+                    <ScanLine size={32} color="#6366F1" strokeWidth={2.5} />
+                  </View>
+                  <Text style={styles.topTitle}>Scan Package for Nevis Receiving</Text>
+                  <Text style={styles.topSubtitle}>Position barcode in frame</Text>
+                </View>
+              </View>
+              <View style={styles.middleRow}>
+                <View style={styles.sideOverlay} />
+                <View style={styles.scanAreaContainer}>
+                  <View style={styles.scanArea}>
+                    <Animated.View
+                      style={[
+                        styles.corner,
+                        styles.topLeft,
+                        { transform: [{ scale: pulseAnim }] },
+                      ]}
+                    />
+                    <Animated.View
+                      style={[
+                        styles.corner,
+                        styles.topRight,
+                        { transform: [{ scale: pulseAnim }] },
+                      ]}
+                    />
+                    <Animated.View
+                      style={[
+                        styles.corner,
+                        styles.bottomLeft,
+                        { transform: [{ scale: pulseAnim }] },
+                      ]}
+                    />
+                    <Animated.View
+                      style={[
+                        styles.corner,
+                        styles.bottomRight,
+                        { transform: [{ scale: pulseAnim }] },
+                      ]}
+                    />
+                    {!scanned && (
+                      <Animated.View
+                        style={[
+                          styles.scanLine,
+                          {
+                            transform: [
+                              {
+                                translateY: scanLineAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [-150, 150],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                </View>
+                <View style={styles.sideOverlay} />
+              </View>
+              <View style={styles.bottomOverlay}>
+                {scanned ? (
+                  <View style={styles.scannedContainer}>
+                    <View style={styles.successBadge}>
+                      <Text style={styles.successText}>✓ Package Received!</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={() => {
+                        setScanned(false);
+                        isNavigatingRef.current = false;
+                      }}
+                    >
+                      <Text style={styles.retryButtonText}>Tap to Scan Again</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.hintContainer}>
+                    <Text style={styles.hintText}>Hold steady for best results</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <CameraView
+            style={styles.camera}
+            facing={facing}
+            onBarcodeScanned={handleBarCodeScanned}
+            barcodeScannerSettings={{
+              barcodeTypes: [
+                'qr',
+                'ean13',
+                'ean8',
+                'code128',
+                'code39',
+                'code93',
+                'upc_a',
+                'upc_e',
+                'codabar',
+                'itf14',
+                'aztec',
+                'pdf417',
+                'datamatrix',
+              ],
+            }}
+          >
+            <View style={styles.overlay}>
           <View style={styles.topOverlay}>
             <View style={styles.topSection}>
               <View style={styles.iconContainer}>
@@ -731,6 +827,7 @@ export default function NevisScannerScreen() {
           </View>
         </View>
       </CameraView>
+        )
       ) : (
         <View style={styles.hardwareScannerContainer}>
           <View style={styles.hardwareScannerContent}>
