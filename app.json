@@ -16,10 +16,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.mrk54opr365nuifvcfrsm-9xo1ldcc",
-"infoPlist": {
-"NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-"NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
-},
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      },
       "usesIcloudStorage": true
     },
     "android": {
