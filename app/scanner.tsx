@@ -315,7 +315,7 @@ export default function ScannerScreen() {
             }
           }}
         >
-          <Text style={styles.permissionButtonText}>Grant Camera Permission</Text>
+          <Text style={styles.permissionButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     );
