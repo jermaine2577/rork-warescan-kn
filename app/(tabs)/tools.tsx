@@ -6,7 +6,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Stack, useRouter } from 'expo-router';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, LogOut, Trash2, User, RefreshCcw, Eye, X, DollarSign, Wallet, Calendar, Filter, ChevronDown, Users, Plus, Key, Copy, Lock, Edit3, ShieldCheck, Package, MapPin, Home, Search } from 'lucide-react-native';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import * as XLSX from 'xlsx';
 import type { Destination, ProductInput, ProductStatus } from '@/types/inventory';
-import { useMemo } from 'react';
 import { Alert } from '@/utils/webCompatibility';
 
 interface ExcelRow {
@@ -30,8 +29,8 @@ interface ExcelRow {
 
 export default function ToolsScreen() {
   const router = useRouter();
-  const { updateDestinationsByBarcode, products, resetAllData, bulkImportProducts } = useInventory();
-  const { session, logout, deleteUser, currentUser, subUsers, createSubUser, deleteSubUser, resetEmployeePassword, updateSubUserPrivileges, hasPrivilege, warehouseSettings, updateWarehouseSettings, toggleUserActive, changeOwnPassword } = useAuth();
+  const { products, resetAllData, bulkImportProducts } = useInventory();
+  const { session, logout, deleteUser, currentUser, subUsers, createSubUser, deleteSubUser, resetEmployeePassword, updateSubUserPrivileges, hasPrivilege } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadResult, setUploadResult] = useState<{
     success: boolean;
@@ -81,15 +80,6 @@ export default function ToolsScreen() {
   const [newPasswordForEmployee, setNewPasswordForEmployee] = useState('');
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [isUpdatingPrivileges, setIsUpdatingPrivileges] = useState(false);
-  const [showWarehouseSettingsModal, setShowWarehouseSettingsModal] = useState(false);
-  const [editedWarehouseSettings, setEditedWarehouseSettings] = useState(warehouseSettings);
-  const [isSavingWarehouseSettings, setIsSavingWarehouseSettings] = useState(false);
-  const [newStorageLocation, setNewStorageLocation] = useState('');
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const allUsers = useMemo(() => {
     const userSet = new Set<string>();
@@ -102,7 +92,7 @@ export default function ToolsScreen() {
   }, [products]);
 
   const financialStats = useMemo(() => {
-    const parsePrice = (priceStr?: string): number => {
+    const localParsePrice = (priceStr?: string): number => {
       if (!priceStr) return 0;
       const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
       return parseFloat(cleanPrice) || 0;
@@ -141,14 +131,14 @@ export default function ToolsScreen() {
         const matchesStatus = financialStatusFilter === 'all' || financialStatusFilter === 'received';
         return p.status === 'received' && p.price && matchesStatus;
       })
-      .reduce((sum, p) => sum + parsePrice(p.price), 0);
+      .reduce((sum, p) => sum + localParsePrice(p.price), 0);
 
     const collectedValue = filteredProducts
       .filter(p => {
         const matchesStatus = financialStatusFilter === 'all' || financialStatusFilter === 'released';
         return p.status === 'released' && p.price && matchesStatus;
       })
-      .reduce((sum, p) => sum + parsePrice(p.price), 0);
+      .reduce((sum, p) => sum + localParsePrice(p.price), 0);
 
     return {
       warehouseValue,
@@ -194,7 +184,7 @@ export default function ToolsScreen() {
               try {
                 await deleteUser(session.userId);
                 router.replace('/login');
-              } catch (error) {
+              } catch {
                 Alert.alert('Error', 'Failed to delete account');
               }
             }
@@ -276,7 +266,7 @@ export default function ToolsScreen() {
             try {
               await deleteSubUser(employeeId);
               Alert.alert('Success', 'Employee deleted successfully');
-            } catch (error) {
+            } catch {
               Alert.alert('Error', 'Failed to delete employee');
             }
           },
@@ -362,63 +352,7 @@ export default function ToolsScreen() {
     }
   };
 
-  const handleToggleUserActive = async (userId: string, username: string, isCurrentlyActive: boolean) => {
-    const action = isCurrentlyActive ? 'deactivate' : 'activate';
-    Alert.alert(
-      `${action.charAt(0).toUpperCase() + action.slice(1)} User`,
-      `Are you sure you want to ${action} ${username}? ${isCurrentlyActive ? 'They will not be able to login.' : 'They will be able to login again.'}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: action.charAt(0).toUpperCase() + action.slice(1),
-          onPress: async () => {
-            try {
-              await toggleUserActive(userId);
-              Alert.alert('Success', `User ${isCurrentlyActive ? 'deactivated' : 'activated'} successfully`);
-            } catch (error) {
-              Alert.alert('Error', `Failed to ${action} user`);
-            }
-          },
-        },
-      ]
-    );
-  };
 
-  const handleSaveWarehouseSettings = async () => {
-    setIsSavingWarehouseSettings(true);
-    try {
-      await updateWarehouseSettings(editedWarehouseSettings);
-      setShowWarehouseSettingsModal(false);
-      Alert.alert('Success', 'Warehouse settings updated successfully');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update warehouse settings');
-    } finally {
-      setIsSavingWarehouseSettings(false);
-    }
-  };
-
-  const handleAddStorageLocation = () => {
-    if (!newStorageLocation.trim()) {
-      Alert.alert('Error', 'Please enter a storage location');
-      return;
-    }
-    if (editedWarehouseSettings.storageLocations.includes(newStorageLocation.trim().toUpperCase())) {
-      Alert.alert('Error', 'This storage location already exists');
-      return;
-    }
-    setEditedWarehouseSettings({
-      ...editedWarehouseSettings,
-      storageLocations: [...editedWarehouseSettings.storageLocations, newStorageLocation.trim().toUpperCase()],
-    });
-    setNewStorageLocation('');
-  };
-
-  const handleRemoveStorageLocation = (location: string) => {
-    setEditedWarehouseSettings({
-      ...editedWarehouseSettings,
-      storageLocations: editedWarehouseSettings.storageLocations.filter((l) => l !== location),
-    });
-  };
 
   const handleResetPress = () => {
     if (!hasPrivilege('resetData')) {
@@ -700,12 +634,6 @@ export default function ToolsScreen() {
     }
 
     try {
-      const parsePrice = (priceStr?: string): number => {
-        if (!priceStr) return 0;
-        const cleanPrice = priceStr.replace(/[^0-9.]/g, '');
-        return parseFloat(cleanPrice) || 0;
-      };
-
       const isInDateRange = (dateStr: string): boolean => {
         if (!dateRangeStart && !dateRangeEnd) return true;
         const date = new Date(dateStr);

@@ -27,7 +27,7 @@ export async function safeGetItem(key: string): Promise<string | null> {
     if (!key.includes('user_id')) {
       try {
         JSON.parse(trimmed);
-      } catch (e) {
+      } catch {
         console.error(`JSON parse failed for ${key}, clearing...`);
         await AsyncStorage.removeItem(key);
         return null;
@@ -56,7 +56,7 @@ export async function safeSetItem(key: string, value: string): Promise<boolean> 
     if (!key.includes('user_id')) {
       try {
         JSON.parse(value);
-      } catch (e) {
+      } catch {
         console.error(`Attempted to store invalid JSON for ${key}`);
         return false;
       }
