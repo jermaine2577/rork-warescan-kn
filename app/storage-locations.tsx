@@ -12,7 +12,7 @@ import { ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react-native';
 import { BRAND_COLORS } from '@/constants/colors';
 
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-const NUMBERS = [1, 2, 3, 4, 5];
+const FLOORS = [1, 2, 3, 4, 5];
 
 export default function StorageLocationsScreen() {
   const [expandedLetter, setExpandedLetter] = useState<string | null>(null);
@@ -21,8 +21,8 @@ export default function StorageLocationsScreen() {
     setExpandedLetter(expandedLetter === letter ? null : letter);
   };
 
-  const handleLocationSelect = (letter: string, number: number) => {
-    const location = `${letter}${number}`;
+  const handleLocationSelect = (letter: string, floor: number) => {
+    const location = `${letter}-Floor${floor}`;
     console.log('Selected storage location:', location);
     router.back();
   };
@@ -77,14 +77,14 @@ export default function StorageLocationsScreen() {
 
               {expandedLetter === letter && (
                 <View style={styles.numbersContainer}>
-                  {NUMBERS.map((number) => (
+                  {FLOORS.map((floor) => (
                     <TouchableOpacity
-                      key={number}
+                      key={floor}
                       style={styles.numberButton}
-                      onPress={() => handleLocationSelect(letter, number)}
+                      onPress={() => handleLocationSelect(letter, floor)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.numberText}>{number}</Text>
+                      <Text style={styles.numberText}>Floor {floor}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
