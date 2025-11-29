@@ -1,8 +1,7 @@
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import { Stack, useRouter } from 'expo-router';
 import { X, ScanLine, Keyboard } from 'lucide-react-native';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import WebBarcodeScanner from '@/components/WebBarcodeScanner';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import {
   StyleSheet,
   Text,
@@ -17,6 +16,10 @@ import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInventory } from '@/contexts/InventoryContext';
+
+const WebBarcodeScannerWrapper = Platform.OS === 'web' 
+  ? lazy(() => import('@/components/WebBarcodeScanner'))
+  : () => null;
 
 export default function ScannerScreen() {
   const router = useRouter();
@@ -383,11 +386,13 @@ export default function ScannerScreen() {
       {scanMode === 'camera' ? (
         Platform.OS === 'web' ? (
           <View style={styles.camera}>
-            <WebBarcodeScanner
-              onBarcodeScanned={(data) => handleBarCodeScanned({ data })}
-              isScanning={!scanned}
-              style={styles.camera}
-            />
+            <Suspense fallback={<View style={styles.camera} />}>
+              <WebBarcodeScannerWrapper
+                onBarcodeScanned={(data: string) => handleBarCodeScanned({ data })}
+                isScanning={!scanned}
+                style={styles.camera}
+              />
+            </Suspense>
             <View style={styles.overlay}>
               <View style={styles.topOverlay}>
                 <View style={styles.topSection}>

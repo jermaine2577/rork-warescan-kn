@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Text, Platform } from 'react-native';
-import { BrowserMultiFormatReader } from '@zxing/browser';
 
 interface WebBarcodeScannerProps {
   onBarcodeScanned: (data: string) => void;
@@ -14,7 +13,7 @@ export default function WebBarcodeScanner({
   style,
 }: WebBarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const readerRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastScannedRef = useRef<string>('');
@@ -53,6 +52,7 @@ export default function WebBarcodeScanner({
           console.log('[WebBarcodeScanner] Video stream started');
         }
 
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
         readerRef.current = new BrowserMultiFormatReader();
         console.log('[WebBarcodeScanner] ZXing reader initialized');
         
@@ -110,7 +110,7 @@ export default function WebBarcodeScanner({
         controlsRef = await readerRef.current.decodeFromVideoDevice(
           undefined,
           videoRef.current,
-          (result, err) => {
+          (result: any, err: any) => {
             if (!isActive) return;
             
             if (result) {
