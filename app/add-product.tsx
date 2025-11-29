@@ -62,11 +62,10 @@ export default function AddProductScreen() {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     const locations: string[] = [];
     letters.forEach(letter => {
-      for (let num = 1; num <= 5; num++) {
-        locations.push(`${letter}${num}`);
+      for (let floor = 1; floor <= 5; floor++) {
+        locations.push(`${letter}-Floor${floor}`);
       }
     });
-    locations.push('Floor');
     return locations;
   })();
 
