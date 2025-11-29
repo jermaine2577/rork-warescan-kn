@@ -24,10 +24,10 @@ import {
   TextInput,
   ActivityIndicator,
   Platform,
-  Alert,
   Modal,
 } from 'react-native';
 import type { Product } from '@/types/inventory';
+import { Alert } from '@/utils/webCompatibility';
 
 export default function NevisReceivingScreen() {
   const router = useRouter();

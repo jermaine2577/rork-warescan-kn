@@ -1,19 +1,47 @@
-import { Platform, Alert } from 'react-native';
+import { Platform, Alert as RNAlert, AlertButton } from 'react-native';
 
 export const isWeb = Platform.OS === 'web';
 export const isNative = Platform.OS !== 'web';
 export const isIOS = Platform.OS === 'ios';
 export const isAndroid = Platform.OS === 'android';
 
-export function webSafeAlert(title: string, message: string, onPress?: () => void) {
-  if (isWeb) {
-    const confirmed = window.confirm(`${title}\n\n${message}`);
-    if (confirmed && onPress) {
-      onPress();
+export const Alert = {
+  alert: (title: string, message?: string, buttons?: AlertButton[], options?: { cancelable?: boolean }) => {
+    if (isWeb) {
+      if (!buttons || buttons.length === 0) {
+        window.alert(`${title}${message ? '\n\n' + message : ''}`);
+        return;
+      }
+      
+      if (buttons.length === 1) {
+        window.alert(`${title}${message ? '\n\n' + message : ''}`);
+        if (buttons[0].onPress) {
+          buttons[0].onPress();
+        }
+        return;
+      }
+      
+      const confirmed = window.confirm(`${title}${message ? '\n\n' + message : ''}`);
+      
+      if (confirmed) {
+        const confirmButton = buttons.find(b => b.style !== 'cancel') || buttons[buttons.length - 1];
+        if (confirmButton.onPress) {
+          confirmButton.onPress();
+        }
+      } else {
+        const cancelButton = buttons.find(b => b.style === 'cancel') || buttons[0];
+        if (cancelButton.onPress) {
+          cancelButton.onPress();
+        }
+      }
+    } else {
+      RNAlert.alert(title, message, buttons, options);
     }
-  } else {
-    Alert.alert(title, message, onPress ? [{ text: 'OK', onPress }] : undefined);
   }
+};
+
+export function webSafeAlert(title: string, message: string, onPress?: () => void) {
+  Alert.alert(title, message, onPress ? [{ text: 'OK', onPress }] : undefined);
 }
 
 export function downloadBlob(blob: Blob, filename: string) {

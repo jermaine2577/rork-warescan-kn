@@ -13,7 +13,6 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Platform,
   Modal,
@@ -23,6 +22,7 @@ import {
 import * as XLSX from 'xlsx';
 import type { Destination, ProductInput, ProductStatus } from '@/types/inventory';
 import { useMemo } from 'react';
+import { Alert } from '@/utils/webCompatibility';
 
 interface ExcelRow {
   [key: string]: any;
