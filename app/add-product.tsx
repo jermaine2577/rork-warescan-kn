@@ -63,7 +63,7 @@ export default function AddProductScreen() {
     const locations: string[] = [];
     letters.forEach(letter => {
       for (let floor = 1; floor <= 5; floor++) {
-        locations.push(`${letter}-Floor${floor}`);
+        locations.push(`${letter}-Floor ${floor}`);
       }
     });
     return locations;

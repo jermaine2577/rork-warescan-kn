@@ -22,7 +22,7 @@ export default function StorageLocationsScreen() {
   };
 
   const handleLocationSelect = (letter: string, floor: number) => {
-    const location = `${letter}-Floor${floor}`;
+    const location = `${letter}-Floor ${floor}`;
     console.log('Selected storage location:', location);
     router.back();
   };
