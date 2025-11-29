@@ -18,78 +18,42 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const navigationTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastAuthStateRef = React.useRef(isAuthenticated);
   const isNavigatingRef = React.useRef(false);
-  const [isReady, setIsReady] = React.useState(false);
+  const hasNavigatedRef = React.useRef(false);
 
   useEffect(() => {
-    if (!isLoading && !isReady) {
-      console.log('✓ Auth state loaded, app ready');
-      setIsReady(true);
-    }
-  }, [isLoading, isReady]);
-
-  useEffect(() => {
-    if (isLoading || !isReady) {
+    if (isLoading) {
       return;
     }
 
-    if (navigationTimeoutRef.current) {
-      clearTimeout(navigationTimeoutRef.current);
-      navigationTimeoutRef.current = null;
-    }
-
-    const inAuthGroup = segments[0] === 'login';
-    const authStateChanged = lastAuthStateRef.current !== isAuthenticated;
-    lastAuthStateRef.current = isAuthenticated;
+    const inAuthGroup = segments[0] === 'login' || segments[0] === 'portal-selection';
 
     if (!isAuthenticated && !inAuthGroup) {
-      console.log('🚪 User not authenticated, redirecting to login');
-      if (!isNavigatingRef.current) {
+      if (!isNavigatingRef.current && !hasNavigatedRef.current) {
+        console.log('🚪 User not authenticated, redirecting to login');
         isNavigatingRef.current = true;
+        hasNavigatedRef.current = true;
         router.replace('/login');
-        isNavigatingRef.current = false;
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 100);
       }
-    } else if (isAuthenticated && inAuthGroup && authStateChanged) {
-      console.log('✅ User authenticated, redirecting to portal selection');
-      if (!isNavigatingRef.current) {
+    } else if (isAuthenticated && segments[0] === 'login') {
+      if (!isNavigatingRef.current && !hasNavigatedRef.current) {
+        console.log('✅ User authenticated, redirecting to portal selection');
         isNavigatingRef.current = true;
+        hasNavigatedRef.current = true;
         router.replace('/portal-selection');
-        isNavigatingRef.current = false;
+        setTimeout(() => {
+          isNavigatingRef.current = false;
+        }, 100);
       }
     } else {
-      isNavigatingRef.current = false;
+      hasNavigatedRef.current = false;
     }
+  }, [isAuthenticated, isLoading, segments, router]);
 
-    return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-        navigationTimeoutRef.current = null;
-      }
-    };
-  }, [isAuthenticated, isLoading, isReady, segments, router]);
-
-  if (isLoading || !isReady) {
-    return (
-      <View style={styles.splashContainer}>
-        <Image
-          source='https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/3b45n4ikwocbfy3m0gori'
-          style={styles.splashLogo}
-          contentFit="contain"
-        />
-        <ActivityIndicator 
-          size="large" 
-          color="#2563EB" 
-          style={styles.splashLoader}
-        />
-      </View>
-    );
-  }
-
-  const inAuthGroup = segments[0] === 'login' || segments[0] === 'portal-selection';
-  
-  if (!isAuthenticated && !inAuthGroup) {
+  if (isLoading) {
     return (
       <View style={styles.splashContainer}>
         <Image
