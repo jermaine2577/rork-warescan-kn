@@ -272,6 +272,10 @@ export default function ProductDetailScreen() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       >
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>

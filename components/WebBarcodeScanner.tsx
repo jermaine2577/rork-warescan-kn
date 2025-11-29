@@ -100,41 +100,55 @@ export default function WebBarcodeScanner({
 
     console.log('[WebBarcodeScanner] Starting barcode detection...');
 
-    const detectBarcode = () => {
-      if (!videoRef.current || !readerRef.current) return;
+    let isActive = true;
+    let controlsRef: any = null;
 
-      readerRef.current.decodeFromVideoDevice(
-        undefined,
-        videoRef.current,
-        (result, err) => {
-          if (result) {
-            const barcodeText = result.getText();
-            const now = Date.now();
+    const detectBarcode = async () => {
+      if (!videoRef.current || !readerRef.current || !isActive) return;
+
+      try {
+        controlsRef = await readerRef.current.decodeFromVideoDevice(
+          undefined,
+          videoRef.current,
+          (result, err) => {
+            if (!isActive) return;
             
-            if (
-              barcodeText &&
-              (barcodeText !== lastScannedRef.current || now - lastScannedTimeRef.current > 2000)
-            ) {
-              console.log('[WebBarcodeScanner] Barcode detected:', barcodeText);
-              lastScannedRef.current = barcodeText;
-              lastScannedTimeRef.current = now;
-              onBarcodeScanned(barcodeText);
+            if (result) {
+              const barcodeText = result.getText();
+              const now = Date.now();
+              
+              if (
+                barcodeText &&
+                (barcodeText !== lastScannedRef.current || now - lastScannedTimeRef.current > 2000)
+              ) {
+                console.log('[WebBarcodeScanner] Barcode detected:', barcodeText);
+                lastScannedRef.current = barcodeText;
+                lastScannedTimeRef.current = now;
+                onBarcodeScanned(barcodeText);
+              }
+            }
+            
+            if (err && err.name !== 'NotFoundException') {
+              console.error('[WebBarcodeScanner] Decode error:', err);
             }
           }
-          
-          if (err && err.name !== 'NotFoundException') {
-            console.error('[WebBarcodeScanner] Decode error:', err);
-          }
-        }
-      );
+        );
+      } catch (error) {
+        console.error('[WebBarcodeScanner] Failed to start decoding:', error);
+      }
     };
 
     detectBarcode();
 
     return () => {
-      console.log('[WebBarcodeScanner] Stopped barcode detection');
-      if (readerRef.current) {
-        console.log('[WebBarcodeScanner] Cleaning up reader on unmount');
+      console.log('[WebBarcodeScanner] Stopping barcode detection');
+      isActive = false;
+      if (controlsRef && controlsRef.stop) {
+        try {
+          controlsRef.stop();
+        } catch (e) {
+          console.log('[WebBarcodeScanner] Error stopping controls:', e);
+        }
       }
     };
   }, [isInitialized, isScanning, onBarcodeScanned]);
