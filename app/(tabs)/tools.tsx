@@ -2884,10 +2884,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   employeeKey: {
-    fontSize: 14,
-    fontWeight: '600' as const,
+    fontSize: 16,
+    fontWeight: '700' as const,
     color: '#3B82F6',
-    letterSpacing: 1,
+    letterSpacing: 2.5,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
   employeeActions: {
     flexDirection: 'row',

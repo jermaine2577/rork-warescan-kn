@@ -734,7 +734,8 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let key = '';
         for (let i = 0; i < 6; i++) {
-          key += chars.charAt(Math.floor(Math.random() * chars.length));
+          const randomChar = chars.charAt(Math.floor(Math.random() * chars.length));
+          key += randomChar;
         }
         return key;
       };
