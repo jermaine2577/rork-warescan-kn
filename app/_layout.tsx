@@ -48,19 +48,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       console.log('🚪 User not authenticated, redirecting to login');
       if (!isNavigatingRef.current) {
         isNavigatingRef.current = true;
-        navigationTimeoutRef.current = setTimeout(() => {
-          router.replace('/login');
-          isNavigatingRef.current = false;
-        }, 100);
+        router.replace('/login');
+        isNavigatingRef.current = false;
       }
     } else if (isAuthenticated && inAuthGroup && authStateChanged) {
       console.log('✅ User authenticated, redirecting to portal selection');
       if (!isNavigatingRef.current) {
         isNavigatingRef.current = true;
-        navigationTimeoutRef.current = setTimeout(() => {
-          router.replace('/portal-selection');
-          isNavigatingRef.current = false;
-        }, 100);
+        router.replace('/portal-selection');
+        isNavigatingRef.current = false;
       }
     } else {
       isNavigatingRef.current = false;
@@ -75,6 +71,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated, isLoading, isReady, segments, router]);
 
   if (isLoading || !isReady) {
+    return (
+      <View style={styles.splashContainer}>
+        <Image
+          source='https://pub-e001eb4506b145aa938b5d3badbff6a5.r2.dev/attachments/3b45n4ikwocbfy3m0gori'
+          style={styles.splashLogo}
+          contentFit="contain"
+        />
+        <ActivityIndicator 
+          size="large" 
+          color="#2563EB" 
+          style={styles.splashLoader}
+        />
+      </View>
+    );
+  }
+
+  const inAuthGroup = segments[0] === 'login' || segments[0] === 'portal-selection';
+  
+  if (!isAuthenticated && !inAuthGroup) {
     return (
       <View style={styles.splashContainer}>
         <Image
