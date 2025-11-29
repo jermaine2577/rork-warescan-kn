@@ -730,7 +730,16 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
       const formattedUsername = data.username.trim().charAt(0).toUpperCase() + data.username.trim().slice(1);
 
-      const uniqueKey = Math.floor(100000 + Math.random() * 900000).toString();
+      const generateUniqueKey = (): string => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let key = '';
+        for (let i = 0; i < 6; i++) {
+          key += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return key;
+      };
+      
+      const uniqueKey = generateUniqueKey();
 
       const newUser: User = {
         id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
