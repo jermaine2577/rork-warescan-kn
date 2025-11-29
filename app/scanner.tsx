@@ -293,9 +293,29 @@ export default function ScannerScreen() {
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={requestPermission}
+          onPress={async () => {
+            console.log('Requesting camera permission...');
+            try {
+              const result = await requestPermission();
+              console.log('Permission result:', result);
+              if (!result.granted) {
+                Alert.alert(
+                  'Permission Denied',
+                  'Camera permission is required to scan barcodes. Please enable it in your device settings.',
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error) {
+              console.error('Error requesting permission:', error);
+              Alert.alert(
+                'Error',
+                'Could not request camera permission. Please check your device settings.',
+                [{ text: 'OK' }]
+              );
+            }
+          }}
         >
-          <Text style={styles.permissionButtonText}>Continue</Text>
+          <Text style={styles.permissionButtonText}>Grant Camera Permission</Text>
         </TouchableOpacity>
       </View>
     );
