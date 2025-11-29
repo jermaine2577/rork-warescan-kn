@@ -382,7 +382,7 @@ export default function ScannerScreen() {
             ],
           }}
         >
-        <View style={styles.overlay}>
+          <View style={styles.overlay}>
           <View style={styles.topOverlay}>
             <View style={styles.topSection}>
               <View style={styles.iconContainer}>
