@@ -13,11 +13,14 @@ export default function WebBarcodeScanner({
   style,
 }: WebBarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const readerRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const lastScannedRef = useRef<string>('');
   const lastScannedTimeRef = useRef<number>(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanLoopRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -25,31 +28,73 @@ export default function WebBarcodeScanner({
     }
 
     let mounted = true;
-    let stream: MediaStream | null = null;
 
     const initScanner = async () => {
       try {
         console.log('[WebBarcodeScanner] Initializing...');
+        console.log('[WebBarcodeScanner] User agent:', navigator.userAgent);
         
-        const constraints = {
-          video: {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        console.log('[WebBarcodeScanner] Is mobile:', isMobile);
+
+        const constraints: MediaStreamConstraints = {
+          video: isMobile ? {
+            facingMode: 'environment',
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+          } : {
             facingMode: { ideal: 'environment' },
             width: { ideal: 1280 },
             height: { ideal: 720 },
           },
+          audio: false,
         };
 
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log('[WebBarcodeScanner] Requesting camera with constraints:', constraints);
+
+        try {
+          streamRef.current = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (firstErr) {
+          console.warn('[WebBarcodeScanner] Failed with ideal constraints, trying fallback:', firstErr);
+          streamRef.current = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false,
+          });
+        }
         
-        if (!mounted) {
-          stream.getTracks().forEach(track => track.stop());
+        if (!mounted || !streamRef.current) {
+          if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+          }
           return;
         }
 
+        const videoTrack = streamRef.current.getVideoTracks()[0];
+        const settings = videoTrack.getSettings();
+        console.log('[WebBarcodeScanner] Camera settings:', settings);
+
         if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+          videoRef.current.srcObject = streamRef.current;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.setAttribute('autoplay', 'true');
+          videoRef.current.setAttribute('muted', 'true');
+          
+          await new Promise<void>((resolve, reject) => {
+            if (!videoRef.current) return reject(new Error('Video ref lost'));
+            
+            videoRef.current.onloadedmetadata = () => {
+              if (videoRef.current) {
+                videoRef.current.play()
+                  .then(() => resolve())
+                  .catch(reject);
+              }
+            };
+            
+            setTimeout(() => reject(new Error('Video load timeout')), 5000);
+          });
+          
           console.log('[WebBarcodeScanner] Video stream started');
+          console.log('[WebBarcodeScanner] Video dimensions:', videoRef.current.videoWidth, 'x', videoRef.current.videoHeight);
         }
 
         const { BrowserMultiFormatReader } = await import('@zxing/browser');
@@ -58,10 +103,17 @@ export default function WebBarcodeScanner({
         
         setIsInitialized(true);
         setError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('[WebBarcodeScanner] Initialization error:', err);
+        console.error('[WebBarcodeScanner] Error name:', err?.name);
+        console.error('[WebBarcodeScanner] Error message:', err?.message);
         if (mounted) {
-          setError('Failed to access camera. Please check permissions.');
+          const errorMessage = err?.name === 'NotAllowedError' 
+            ? 'Camera permission denied. Please allow camera access and reload.'
+            : err?.name === 'NotFoundError'
+            ? 'No camera found on your device.'
+            : `Failed to access camera: ${err?.message || 'Unknown error'}`;
+          setError(errorMessage);
         }
       }
     };
@@ -72,83 +124,105 @@ export default function WebBarcodeScanner({
       mounted = false;
       console.log('[WebBarcodeScanner] Cleaning up...');
       
-      const currentVideo = videoRef.current;
+      if (scanLoopRef.current) {
+        cancelAnimationFrame(scanLoopRef.current);
+        scanLoopRef.current = null;
+      }
       
       if (readerRef.current) {
+        try {
+          readerRef.current.reset();
+        } catch (e) {
+          console.log('[WebBarcodeScanner] Error resetting reader:', e);
+        }
         readerRef.current = null;
       }
       
-      if (stream) {
-        stream.getTracks().forEach(track => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
           track.stop();
           console.log('[WebBarcodeScanner] Track stopped');
         });
+        streamRef.current = null;
       }
       
-      if (currentVideo && currentVideo.srcObject) {
-        const videoStream = currentVideo.srcObject as MediaStream;
-        videoStream.getTracks().forEach(track => track.stop());
-        currentVideo.srcObject = null;
+      if (videoRef.current && videoRef.current.srcObject) {
+        videoRef.current.srcObject = null;
       }
     };
   }, []);
 
   useEffect(() => {
     if (!isInitialized || !isScanning || !readerRef.current || !videoRef.current) {
+      if (scanLoopRef.current) {
+        cancelAnimationFrame(scanLoopRef.current);
+        scanLoopRef.current = null;
+      }
       return;
     }
 
-    console.log('[WebBarcodeScanner] Starting barcode detection...');
+    console.log('[WebBarcodeScanner] Starting continuous barcode scanning...');
 
     let isActive = true;
-    let controlsRef: any = null;
 
-    const detectBarcode = async () => {
-      if (!videoRef.current || !readerRef.current || !isActive) return;
+    const scanBarcode = async () => {
+      if (!isActive || !videoRef.current || !readerRef.current || !canvasRef.current) {
+        return;
+      }
 
-      try {
-        controlsRef = await readerRef.current.decodeFromVideoDevice(
-          undefined,
-          videoRef.current,
-          (result: any, err: any) => {
-            if (!isActive) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+        try {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            if (result) {
-              const barcodeText = result.getText();
-              const now = Date.now();
+            try {
+              const result = await readerRef.current.decodeFromCanvas(canvas);
               
-              if (
-                barcodeText &&
-                (barcodeText !== lastScannedRef.current || now - lastScannedTimeRef.current > 2000)
-              ) {
-                console.log('[WebBarcodeScanner] Barcode detected:', barcodeText);
-                lastScannedRef.current = barcodeText;
-                lastScannedTimeRef.current = now;
-                onBarcodeScanned(barcodeText);
+              if (result && isActive) {
+                const barcodeText = result.getText();
+                const now = Date.now();
+                
+                if (
+                  barcodeText &&
+                  (barcodeText !== lastScannedRef.current || now - lastScannedTimeRef.current > 2000)
+                ) {
+                  console.log('[WebBarcodeScanner] Barcode detected:', barcodeText);
+                  lastScannedRef.current = barcodeText;
+                  lastScannedTimeRef.current = now;
+                  onBarcodeScanned(barcodeText);
+                }
+              }
+            } catch (err: any) {
+              if (err?.name !== 'NotFoundException') {
+                console.debug('[WebBarcodeScanner] Decode attempt:', err?.name);
               }
             }
-            
-            if (err && err.name !== 'NotFoundException') {
-              console.error('[WebBarcodeScanner] Decode error:', err);
-            }
           }
-        );
-      } catch (error) {
-        console.error('[WebBarcodeScanner] Failed to start decoding:', error);
+        } catch (err) {
+          console.error('[WebBarcodeScanner] Scan error:', err);
+        }
+      }
+
+      if (isActive) {
+        scanLoopRef.current = requestAnimationFrame(scanBarcode);
       }
     };
 
-    detectBarcode();
+    scanLoopRef.current = requestAnimationFrame(scanBarcode);
 
     return () => {
-      console.log('[WebBarcodeScanner] Stopping barcode detection');
+      console.log('[WebBarcodeScanner] Stopping barcode scanning');
       isActive = false;
-      if (controlsRef && controlsRef.stop) {
-        try {
-          controlsRef.stop();
-        } catch (e) {
-          console.log('[WebBarcodeScanner] Error stopping controls:', e);
-        }
+      if (scanLoopRef.current) {
+        cancelAnimationFrame(scanLoopRef.current);
+        scanLoopRef.current = null;
       }
     };
   }, [isInitialized, isScanning, onBarcodeScanned]);
@@ -162,18 +236,28 @@ export default function WebBarcodeScanner({
       {error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorHint}>Please check browser settings and reload the page.</Text>
         </View>
       ) : (
-        <video
-          ref={videoRef}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          playsInline
-          muted
-        />
+        <>
+          <video
+            ref={videoRef}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+            }}
+            playsInline
+            autoPlay
+            muted
+          />
+          <canvas
+            ref={canvasRef}
+            style={{
+              display: 'none',
+            }}
+          />
+        </>
       )}
     </View>
   );
@@ -190,10 +274,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1F2937',
     padding: 20,
+    gap: 12,
   },
   errorText: {
     color: '#EF4444',
     fontSize: 16,
+    fontWeight: '600' as const,
+    textAlign: 'center',
+  },
+  errorHint: {
+    color: '#9CA3AF',
+    fontSize: 14,
     textAlign: 'center',
   },
 });
