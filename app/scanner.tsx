@@ -289,25 +289,13 @@ export default function ScannerScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <Text style={styles.permissionTitle}>Camera Access Required</Text>
         <Text style={styles.permissionText}>
-          We need access to your camera to scan barcodes
+          To scan barcodes, this app needs access to your camera. Tap Continue to open your device settings where you can grant camera permission.
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={requestPermission}
         >
-          <Text style={styles.permissionButtonText}>Grant Permission</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(tabs)');
-            }
-          }}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
+          <Text style={styles.permissionButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     );
@@ -587,15 +575,7 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#FFFFFF',
   },
-  cancelButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: '#6B7280',
-  },
+
   camera: {
     flex: 1,
   },
