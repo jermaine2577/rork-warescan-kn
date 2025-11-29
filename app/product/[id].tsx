@@ -55,7 +55,9 @@ export default function ProductDetailScreen() {
         locations.push(`${letter}${num}`);
       }
     });
-    locations.push('Floor');
+    for (let floor = 1; floor <= 5; floor++) {
+      locations.push(`Floor ${floor}`);
+    }
     return locations;
   })();
 
