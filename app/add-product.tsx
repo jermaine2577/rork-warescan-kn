@@ -71,11 +71,13 @@ export default function AddProductScreen() {
 
   const [hasCheckedExisting, setHasCheckedExisting] = useState(false);
   const alertShownRef = useRef(false);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
-    if (params.barcode && !hasCheckedExisting && !alertShownRef.current) {
+    if (params.barcode && !hasCheckedExisting && !alertShownRef.current && !isProcessingRef.current) {
       setHasCheckedExisting(true);
       alertShownRef.current = true;
+      isProcessingRef.current = true;
       
       const existing = getProductByBarcode(params.barcode);
       
@@ -91,18 +93,19 @@ export default function AddProductScreen() {
                 {
                   text: 'Scan More',
                   onPress: () => {
+                    isProcessingRef.current = false;
                     router.replace('/scanner');
                   },
                 },
                 {
                   text: 'View All',
                   onPress: () => {
+                    isProcessingRef.current = false;
                     router.replace('/(tabs)');
                   },
                   style: 'cancel',
                 },
-              ],
-              { cancelable: false }
+              ]
             );
           } else {
             Alert.alert(
@@ -112,6 +115,7 @@ export default function AddProductScreen() {
                 {
                   text: 'OK',
                   onPress: () => {
+                    isProcessingRef.current = false;
                     if (router.canGoBack()) {
                       router.back();
                     } else {
@@ -119,8 +123,7 @@ export default function AddProductScreen() {
                     }
                   },
                 },
-              ],
-              { cancelable: false }
+              ]
             );
           }
         } else if (existing.uploadStatus === 'uploaded') {
@@ -142,6 +145,7 @@ export default function AddProductScreen() {
                 text: 'Cancel', 
                 style: 'cancel', 
                 onPress: () => {
+                  isProcessingRef.current = false;
                   if (router.canGoBack()) {
                     router.back();
                   } else {
@@ -152,11 +156,11 @@ export default function AddProductScreen() {
               {
                 text: 'View',
                 onPress: () => {
+                  isProcessingRef.current = false;
                   router.replace(`/product/${existing.id}`);
                 },
               },
-            ],
-            { cancelable: false }
+            ]
           );
         }
       } else {
@@ -167,6 +171,7 @@ export default function AddProductScreen() {
             { 
               text: 'OK', 
               onPress: () => {
+                isProcessingRef.current = false;
                 if (router.canGoBack()) {
                   router.back();
                 } else {
@@ -174,12 +179,11 @@ export default function AddProductScreen() {
                 }
               }
             },
-          ],
-          { cancelable: false }
+          ]
         );
       }
     }
-  }, [params.barcode, getProductByBarcode, router, hasCheckedExisting]);
+  }, [params.barcode, getProductByBarcode, router, hasCheckedExisting, verifyProductFromNevis, session]);
 
   const handleSave = () => {
     if (!barcode.trim()) {
@@ -209,23 +213,24 @@ export default function AddProductScreen() {
                 {
                   text: 'Validate More Packages',
                   onPress: () => {
+                    isProcessingRef.current = false;
                     router.replace('/scanner');
                   },
                 },
                 {
                   text: 'View Validated Packages',
                   onPress: () => {
+                    isProcessingRef.current = false;
                     router.replace('/(tabs)');
                   },
                   style: 'cancel',
                 },
-              ],
-              { cancelable: false }
+              ]
             );
           }, 100);
         } else {
           setTimeout(() => {
-            Alert.alert('Error', 'Failed to validate package', [{ text: 'OK' }], { cancelable: false });
+            Alert.alert('Error', 'Failed to validate package', [{ text: 'OK', onPress: () => { isProcessingRef.current = false; } }]);
           }, 100);
         }
       } catch (error) {
@@ -234,8 +239,7 @@ export default function AddProductScreen() {
           Alert.alert(
             'Error',
             error instanceof Error ? error.message : 'Failed to validate package. Please try logging out and logging back in.',
-            [{ text: 'OK' }],
-            { cancelable: false }
+            [{ text: 'OK', onPress: () => { isProcessingRef.current = false; } }]
           );
         }, 100);
       }
@@ -248,8 +252,7 @@ export default function AddProductScreen() {
         Alert.alert(
           'Duplicate Barcode',
           'This barcode already exists in the system. Each barcode must be unique.',
-          [{ text: 'OK' }],
-          { cancelable: false }
+          [{ text: 'OK', onPress: () => { isProcessingRef.current = false; } }]
         );
       }, 100);
       return;
@@ -276,18 +279,19 @@ export default function AddProductScreen() {
               {
                 text: 'Scan More',
                 onPress: () => {
+                  isProcessingRef.current = false;
                   router.replace('/scanner');
                 },
               },
               {
                 text: 'View All',
                 onPress: () => {
+                  isProcessingRef.current = false;
                   router.replace('/(tabs)');
                 },
                 style: 'cancel',
               },
-            ],
-            { cancelable: false }
+            ]
           );
         }, 100);
       }
@@ -297,8 +301,7 @@ export default function AddProductScreen() {
         Alert.alert(
           'Error',
           error instanceof Error ? error.message : 'Failed to add package. Please try logging out and logging back in.',
-          [{ text: 'OK' }],
-          { cancelable: false }
+          [{ text: 'OK', onPress: () => { isProcessingRef.current = false; } }]
         );
       }, 100);
     }
@@ -312,6 +315,8 @@ export default function AddProductScreen() {
           title: isValidateMode ? 'Validate Package' : 'Add Package',
           headerLeft: () => (
             <TouchableOpacity onPress={() => {
+              isProcessingRef.current = false;
+              alertShownRef.current = false;
               if (router.canGoBack()) {
                 router.back();
               } else {
