@@ -341,9 +341,6 @@ export default function AddProductScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-        }}
       >
         <View style={styles.section}>
           <Text style={styles.label}>Barcode *</Text>
