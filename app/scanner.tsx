@@ -291,9 +291,9 @@ export default function ScannerScreen() {
     return (
       <View style={styles.permissionContainer}>
         <Stack.Screen options={{ headerShown: false }} />
-        <Text style={styles.permissionTitle}>Camera Access Required</Text>
+        <Text style={styles.permissionTitle}>Camera Access Needed</Text>
         <Text style={styles.permissionText}>
-          To scan barcodes, this app needs access to your camera. Tap Continue to open your device settings where you can grant camera permission.
+          This app needs camera access to scan barcodes.
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
@@ -302,24 +302,12 @@ export default function ScannerScreen() {
             try {
               const result = await requestPermission();
               console.log('Permission result:', result);
-              if (!result.granted) {
-                Alert.alert(
-                  'Permission Denied',
-                  'Camera permission is required to scan barcodes. Please enable it in your device settings.',
-                  [{ text: 'OK' }]
-                );
-              }
             } catch (error) {
               console.error('Error requesting permission:', error);
-              Alert.alert(
-                'Error',
-                'Could not request camera permission. Please check your device settings.',
-                [{ text: 'OK' }]
-              );
             }
           }}
         >
-          <Text style={styles.permissionButtonText}>Continue</Text>
+          <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
         </TouchableOpacity>
       </View>
     );
