@@ -287,9 +287,9 @@ export default function ScannerScreen() {
   }, [scanMode]);
 
   useEffect(() => {
-    if (scanMode === 'scanner' && !scanned) {
+    if (scanMode === 'scanner' && !scanned && Platform.OS !== 'web') {
       const interval = setInterval(() => {
-        if (hardwareScannerRef.current && Platform.OS !== 'web') {
+        if (hardwareScannerRef.current) {
           hardwareScannerRef.current.focus();
         }
       }, 1000);
