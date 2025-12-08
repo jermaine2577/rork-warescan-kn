@@ -16,13 +16,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.mrk54opr365nuifvcfrsm-9xo1ldcc",
-      "infoPlist": {
-        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to access your camera",
-        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
-        "UIBackgroundModes": [
-          "audio"
-        ]
-      },
+			 "infoPlist": {
+				"NSCameraUsageDescription": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. This allows you to quickly identify and track packages.",
+				"NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone"
+},
       "usesIcloudStorage": true
     },
     "android": {
@@ -52,14 +49,14 @@
       ],
       "expo-font",
       "expo-web-browser",
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
-          "recordAudioAndroid": true
-        }
-      ],
+ 			 [
+			"expo-camera",
+			{
+  			"cameraPermission": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. This allows you to quickly identify and track packages.",
+  			"microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+  			"recordAudioAndroid": true
+				}
+				],
       [
         "expo-document-picker",
         {
