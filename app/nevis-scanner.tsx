@@ -549,7 +549,7 @@ export default function NevisScannerScreen() {
             }
           }}
         >
-          <Text style={styles.permissionButtonText}>Grant Camera Access</Text>
+          <Text style={styles.permissionButtonText}>Continue</Text>
         </TouchableOpacity>
       </View>
     );
