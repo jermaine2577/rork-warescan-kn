@@ -680,26 +680,9 @@ export default function NevisScannerScreen() {
                 <View style={styles.sideOverlay} />
               </View>
               <View style={styles.bottomOverlay}>
-                {scanned ? (
-                  <View style={styles.scannedContainer}>
-                    <View style={styles.successBadge}>
-                      <Text style={styles.successText}>✓ Package Received!</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.retryButton}
-                      onPress={() => {
-                        setScanned(false);
-                        isNavigatingRef.current = false;
-                      }}
-                    >
-                      <Text style={styles.retryButtonText}>Tap to Scan Again</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.hintContainer}>
-                    <Text style={styles.hintText}>Hold steady for best results</Text>
-                  </View>
-                )}
+                <View style={styles.hintContainer}>
+                  <Text style={styles.hintText}>Hold steady for best results</Text>
+                </View>
               </View>
             </View>
           </View>
