@@ -164,19 +164,31 @@ export default function ScannerScreen() {
       return;
     }
 
-    await playSuccessFeedback();
-
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(e => 
+        console.log('Haptic error:', e)
+      );
+    }
+    
     setTimeout(() => {
-      console.log('→ Navigating to add-product with barcode:', data);
-      if (Platform.OS === 'web') {
-        router.replace(`/add-product?barcode=${encodeURIComponent(data)}` as any);
-      } else {
-        router.push({
-          pathname: '/add-product',
-          params: { barcode: data },
-        });
-      }
-      isNavigatingRef.current = false;
+      Alert.alert(
+        'Barcode Not Found',
+        `No product found with barcode: ${data}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setScanned(false);
+              isNavigatingRef.current = false;
+              if (scanMode === 'scanner') {
+                setHardwareScannerInput('');
+                setLastScannedBarcode('');
+                setTimeout(() => hardwareScannerRef.current?.focus(), 100);
+              }
+            },
+          },
+        ]
+      );
     }, 100);
   }, [scanned, router, playSuccessFeedback, verifyProductFromNevis, session, scanMode]);
 
