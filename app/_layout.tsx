@@ -26,7 +26,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const inAuthGroup = segments[0] === 'login' || segments[0] === 'portal-selection';
+    const segmentString = segments.join('/');
+    const inAuthGroup = segmentString === 'login' || segmentString === 'portal-selection' || segmentString.includes('login') || segmentString.includes('portal-selection');
     const currentPath = '/' + segments.join('/');
 
     if (!isAuthenticated && !inAuthGroup) {
@@ -82,7 +83,9 @@ function RootLayoutNav() {
         <Stack.Screen name="portal-selection" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="scanner" options={{ headerShown: false }} />
+        <Stack.Screen name="nevis-scanner" options={{ headerShown: false }} />
         <Stack.Screen name="add-product" options={{ headerShown: false }} />
+        <Stack.Screen name="storage-locations" options={{ headerShown: false }} />
         <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
       </Stack>
     </ProtectedRoute>

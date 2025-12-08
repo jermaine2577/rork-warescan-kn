@@ -16,9 +16,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.rork.mrk54opr365nuifvcfrsm-9xo1ldcc",
-			"infoPlist": {
-			"NSCameraUsageDescription": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. For example, when receiving shipments, you can scan package barcodes to automatically log items into your inventory system."
-			},
+      "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. For example, when receiving shipments, you can scan package barcodes to automatically log items into your inventory system.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone",
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      },
       "usesIcloudStorage": true
     },
     "android": {
@@ -27,13 +31,14 @@
         "backgroundColor": "#ffffff"
       },
       "package": "app.rork.mrk54opr365nuifvcfrsm_9xo1ldcc",
-			"permissions": [
-				"CAMERA",
-				"android.permission.VIBRATE",
-				"READ_EXTERNAL_STORAGE",
-				"WRITE_EXTERNAL_STORAGE",
-				"INTERNET"
-]
+      "permissions": [
+        "CAMERA",
+        "android.permission.VIBRATE",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -47,17 +52,24 @@
       ],
       "expo-font",
       "expo-web-browser",
-     [
-			"expo-camera",
-			{
-  			"cameraPermission": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. For example, when receiving shipments, you can scan package barcodes to automatically log items into your inventory system.",
-  			"recordAudioAndroid": false
-			}
-			],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "$(PRODUCT_NAME) uses your camera to scan product barcodes for warehouse inventory management. For example, when receiving shipments, you can scan package barcodes to automatically log items into your inventory system.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone",
+          "recordAudioAndroid": false
+        }
+      ],
       [
         "expo-document-picker",
         {
           "iCloudContainerEnvironment": "Production"
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone"
         }
       ]
     ],
