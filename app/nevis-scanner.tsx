@@ -80,6 +80,10 @@ export default function NevisScannerScreen() {
         return;
       }
       
+      console.log('Setting scanned state immediately to prevent duplicates');
+      setScanned(true);
+      isNavigatingRef.current = true;
+      
       if (!data || typeof data !== 'string') {
         console.error('Invalid barcode data type:', typeof data);
         const resetState = () => {
@@ -98,13 +102,12 @@ export default function NevisScannerScreen() {
       
       if (!data || data.trim().length === 0) {
         console.error('Empty barcode data received');
+        setScanned(false);
+        isNavigatingRef.current = false;
         return;
       }
       
       const trimmedBarcode = data.trim();
-      
-      console.log('Setting scanned to true to prevent duplicate scans');
-      setScanned(true);
       
       if (trimmedBarcode.startsWith('http://') || trimmedBarcode.startsWith('https://') || trimmedBarcode.includes('rork.app') || trimmedBarcode.includes('exp.direct')) {
         console.log('Ignoring URL/QR code:', trimmedBarcode);
@@ -231,30 +234,21 @@ export default function NevisScannerScreen() {
           }
         };
         
-        resetScannerState();
-        
-        setTimeout(() => {
-          try {
-            Alert.alert(
-              'Wrong Destination',
-              `This package belongs to "${product.destination || 'Unknown'}", not Nevis.\n\nPlease use the correct receiving portal for this package.`,
-              [
-                {
-                  text: 'OK',
-                  style: 'default',
-                  onPress: () => {
-                    console.log('User acknowledged destination error');
-                  }
-                }
-              ],
-              {
-                cancelable: true
-              }
-            );
-          } catch (alertError) {
-            console.error('Could not show alert (non-critical):', alertError);
+        Alert.alert(
+          'Wrong Destination',
+          `This package belongs to "${product.destination || 'Unknown'}", not Nevis.\n\nPlease use the correct receiving portal for this package.`,
+          [
+            {
+              text: 'OK',
+              style: 'default',
+              onPress: resetScannerState
+            }
+          ],
+          {
+            cancelable: true,
+            onDismiss: resetScannerState
           }
-        }, 100);
+        );
         
         return;
       }
@@ -316,7 +310,6 @@ export default function NevisScannerScreen() {
       }
       
       console.log('Product is valid for receiving. Processing...');
-      isNavigatingRef.current = true;
       
       try {
         await playSuccessFeedback();

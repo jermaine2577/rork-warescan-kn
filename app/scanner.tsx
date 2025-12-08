@@ -97,19 +97,22 @@ export default function ScannerScreen() {
       return;
     }
     
+    console.log('Setting scanned state immediately to prevent duplicates');
+    setScanned(true);
+    isNavigatingRef.current = true;
+    
     console.log(`✓ Barcode detected from ${source}:`, data);
     console.log('Barcode type:', typeof data);
     console.log('Barcode length:', data.length);
     
     if (!data || data.trim().length === 0) {
       console.error('Empty barcode data received');
+      setScanned(false);
+      isNavigatingRef.current = false;
       return;
     }
     
     const trimmedBarcode = data.trim();
-    
-    isNavigatingRef.current = true;
-    setScanned(true);
 
     const verificationResult = verifyProductFromNevis(trimmedBarcode, session?.username);
     
