@@ -418,7 +418,7 @@ export default function NevisScannerScreen() {
         }
       }, 100);
     }
-  }, [scanned, products, updateProduct, playSuccessFeedback, router, scanMode]);
+  }, [scanned, products, updateProduct, playSuccessFeedback, scanMode]);
 
   const handleBarCodeScanned = useCallback(async ({ data }: { data: string }) => {
     if (!scanned && !isNavigatingRef.current) {

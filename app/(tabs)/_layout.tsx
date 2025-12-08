@@ -34,7 +34,7 @@ export default function TabLayout() {
         options={{
           title: "St. Kitts Releasing",
           tabBarIcon: ({ color }) => <LogOut size={24} color={color} />,
-          href: hasPrivilege('releasing') ? '/release' : null,
+          href: hasPrivilege('releasing') ? ('/release' as any) : null,
         }}
       />
       <Tabs.Screen
@@ -42,7 +42,7 @@ export default function TabLayout() {
         options={{
           title: "Nevis Receiving",
           tabBarIcon: ({ color }) => <MapPin size={24} color={color} />,
-          href: hasPrivilege('nevisReceiving') ? '/nevis-receiving' : null,
+          href: hasPrivilege('nevisReceiving') ? ('/nevis-receiving' as any) : null,
         }}
       />
       <Tabs.Screen
@@ -50,7 +50,7 @@ export default function TabLayout() {
         options={{
           title: "Nevis Releasing",
           tabBarIcon: ({ color }) => <MapPin size={24} color={color} />,
-          href: hasPrivilege('nevisReleasing') ? '/nevis-releasing' : null,
+          href: hasPrivilege('nevisReleasing') ? ('/nevis-releasing' as any) : null,
         }}
       />
       <Tabs.Screen

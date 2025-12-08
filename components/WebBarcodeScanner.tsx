@@ -27,8 +27,7 @@ export default function WebBarcodeScanner({
   const scanLoopRef = useRef<number | null>(null);
   const mountedRef = useRef<boolean>(true);
   const onBarcodeScannedRef = useRef(onBarcodeScanned);
-  const [hasTorch, setHasTorch] = useState(false);
-  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [, setHasTorch] = useState(false);
 
   useEffect(() => {
     onBarcodeScannedRef.current = onBarcodeScanned;
@@ -173,6 +172,7 @@ export default function WebBarcodeScanner({
         streamRef.current = null;
       }
       
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const video = videoRef.current;
       if (video && video.srcObject) {
         video.srcObject = null;
@@ -252,21 +252,7 @@ export default function WebBarcodeScanner({
     };
   }, [isInitialized, isScanning, scanBarcode]);
 
-  const toggleTorch = useCallback(async () => {
-    if (!streamRef.current || !hasTorch) return;
-    
-    try {
-      const videoTrack = streamRef.current.getVideoTracks()[0];
-      const newTorchState = !torchEnabled;
-      await videoTrack.applyConstraints({
-        advanced: [{ torch: newTorchState } as any],
-      });
-      setTorchEnabled(newTorchState);
-      console.log('[WebBarcodeScanner] Torch toggled:', newTorchState);
-    } catch (err) {
-      console.error('[WebBarcodeScanner] Failed to toggle torch:', err);
-    }
-  }, [hasTorch, torchEnabled]);
+
 
   if (Platform.OS !== 'web') {
     return null;

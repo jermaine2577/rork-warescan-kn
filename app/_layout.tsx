@@ -27,23 +27,24 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     }
 
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'portal-selection';
+    const currentPath = '/' + segments.join('/');
 
     if (!isAuthenticated && !inAuthGroup) {
       if (!isNavigatingRef.current && !hasNavigatedRef.current) {
         console.log('🚪 User not authenticated, redirecting to login');
         isNavigatingRef.current = true;
         hasNavigatedRef.current = true;
-        router.replace('/login');
+        router.replace('/login' as any);
         setTimeout(() => {
           isNavigatingRef.current = false;
         }, 100);
       }
-    } else if (isAuthenticated && segments[0] === 'login') {
+    } else if (isAuthenticated && currentPath === '/login') {
       if (!isNavigatingRef.current && !hasNavigatedRef.current) {
         console.log('✅ User authenticated, redirecting to portal selection');
         isNavigatingRef.current = true;
         hasNavigatedRef.current = true;
-        router.replace('/portal-selection');
+        router.replace('/portal-selection' as any);
         setTimeout(() => {
           isNavigatingRef.current = false;
         }, 100);

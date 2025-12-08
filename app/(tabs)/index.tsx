@@ -260,7 +260,7 @@ export default function InventoryScreen() {
             headerLeft: () => (
               <TouchableOpacity
                 style={styles.headerLeft}
-                onPress={() => router.replace('/portal-selection')}
+                onPress={() => router.replace('/portal-selection' as any)}
               >
                 <Home size={20} color="#3B82F6" />
                 <Text style={styles.headerBackText}>Home</Text>
@@ -274,7 +274,7 @@ export default function InventoryScreen() {
           <Text style={styles.noAccessText}>You don&apos;t have permission to access the Receiving Portal. Please contact your administrator.</Text>
           <TouchableOpacity
             style={styles.noAccessButton}
-            onPress={() => router.replace('/portal-selection')}
+            onPress={() => router.replace('/portal-selection' as any)}
           >
             <Home size={20} color="#FFFFFF" />
             <Text style={styles.noAccessButtonText}>Go to Portal Selection</Text>
@@ -294,7 +294,7 @@ export default function InventoryScreen() {
           headerLeft: () => (
             <TouchableOpacity
               style={styles.headerLeft}
-              onPress={() => router.replace('/portal-selection')}
+              onPress={() => router.replace('/portal-selection' as any)}
             >
               <Home size={20} color="#3B82F6" />
               <Text style={styles.headerBackText}>Home</Text>
