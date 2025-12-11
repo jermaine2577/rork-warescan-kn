@@ -48,6 +48,7 @@ export default function ScannerScreen() {
     }
   }, [hasPrivilege, router]);
   const [permission, requestPermission] = useCameraPermissions();
+  const [webCameraPermission, setWebCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
   const [scanned, setScanned] = useState(false);
   const [facing] = useState<CameraType>('back');
   const scanLineAnim = useRef(new Animated.Value(0)).current;
@@ -286,6 +287,58 @@ export default function ScannerScreen() {
     };
   }, [scanMode]);
 
+  // Handle web camera permission separately
+  const requestWebCameraPermission = useCallback(async () => {
+    if (Platform.OS !== 'web') return;
+    
+    console.log('[Scanner] Requesting web camera permission...');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      stream.getTracks().forEach(track => track.stop());
+      console.log('[Scanner] Web camera permission granted');
+      setWebCameraPermission('granted');
+    } catch (err: any) {
+      console.error('[Scanner] Web camera permission error:', err);
+      if (err?.name === 'NotAllowedError') {
+        setWebCameraPermission('denied');
+      } else {
+        setWebCameraPermission('denied');
+      }
+    }
+  }, []);
+
+  // Check web camera permission on mount
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    
+    const checkWebPermission = async () => {
+      try {
+        if (navigator.permissions && navigator.permissions.query) {
+          const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+          console.log('[Scanner] Web camera permission state:', result.state);
+          if (result.state === 'granted') {
+            setWebCameraPermission('granted');
+          } else if (result.state === 'denied') {
+            setWebCameraPermission('denied');
+          }
+          // Listen for permission changes
+          result.onchange = () => {
+            console.log('[Scanner] Web camera permission changed to:', result.state);
+            if (result.state === 'granted') {
+              setWebCameraPermission('granted');
+            } else if (result.state === 'denied') {
+              setWebCameraPermission('denied');
+            }
+          };
+        }
+      } catch (err) {
+        console.log('[Scanner] Could not query web permissions:', err);
+      }
+    };
+    
+    checkWebPermission();
+  }, []);
+
   useEffect(() => {
     if (scanMode === 'scanner' && !scanned && Platform.OS !== 'web') {
       const interval = setInterval(() => {
@@ -298,11 +351,20 @@ export default function ScannerScreen() {
     }
   }, [scanMode, scanned]);
 
-  if (!permission) {
+  // For web, use webCameraPermission state; for native, use expo-camera permission
+  const isPermissionGranted = Platform.OS === 'web' 
+    ? webCameraPermission === 'granted' 
+    : permission?.granted;
+  
+  const isPermissionPending = Platform.OS === 'web'
+    ? webCameraPermission === 'pending'
+    : !permission;
+
+  if (isPermissionPending && Platform.OS !== 'web') {
     return <View style={styles.container} />;
   }
 
-  if (!permission.granted) {
+  if (!isPermissionGranted) {
     return (
       <View style={styles.permissionContainer}>
         <Stack.Screen options={{ headerShown: false }} />
@@ -310,13 +372,22 @@ export default function ScannerScreen() {
         <Text style={styles.permissionText}>
           This app needs camera access to scan barcodes.
         </Text>
+        {webCameraPermission === 'denied' && Platform.OS === 'web' && (
+          <Text style={styles.permissionDeniedText}>
+            Camera access was denied. Please enable it in your browser settings and reload the page.
+          </Text>
+        )}
         <TouchableOpacity
           style={styles.permissionButton}
           onPress={async () => {
             console.log('Requesting camera permission...');
             try {
-              const result = await requestPermission();
-              console.log('Permission result:', result);
+              if (Platform.OS === 'web') {
+                await requestWebCameraPermission();
+              } else {
+                const result = await requestPermission();
+                console.log('Permission result:', result);
+              }
             } catch (error) {
               console.error('Error requesting permission:', error);
             }
@@ -682,6 +753,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  permissionDeniedText: {
+    fontSize: 14,
+    color: '#EF4444',
+    textAlign: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
   },
 
   camera: {
